@@ -110,7 +110,148 @@
     if (e.target.closest('[data-action="hero"]')) FX.heroReplay();
   });
 
+  // ---------- แจ้งเตือนสั้น / คัดลอก ----------
+  var toastEl = $('#toast'), toastTimer;
+  function toast(msg, ms) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, ms || 2800);
+  }
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    return new Promise(function (resolve, reject) {
+      var ta = doc.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      doc.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = doc.execCommand('copy'); } catch (e) { ok = false; }
+      doc.body.removeChild(ta);
+      if (ok) resolve(); else reject();
+    });
+  }
+
+  // ---------- ขั้นแรก: รถเสียอยู่ตรงไหน (GPS หรือเลือกเขต) ----------
+  var whereEl = $('#where'), pickEl = $('#where-pick'), foundEl = $('#where-found');
+  var titleEl = $('#where-title'), subEl = $('#where-sub'), changeBtn = $('#where-change');
+  var districtSel = $('#district'), shareBtn = $('#share-loc'), gpsAgain = $('#gps-again');
+  var nearEl = $('#near'), noteEl = $('#where-note');
+  var loc = null, locating = false;
+
+  districtSel.innerHTML += D.districts.map(function (d) { return d[0]; })
+    .sort(function (a, b) { return a.localeCompare(b, 'th'); })
+    .map(function (n) { return '<option>' + n + '</option>'; }).join('');
+
+  // จำตำแหน่งไว้เฉพาะแท็บนี้ (ปิดแท็บแล้วลืม)
+  function saveLoc() { try { sessionStorage.setItem('rsb.loc', JSON.stringify(loc)); } catch (e) { /* ไม่เป็นไร */ } }
+  function loadLoc() {
+    try {
+      var v = JSON.parse(sessionStorage.getItem('rsb.loc'));
+      return v && typeof v.lat === 'number' ? v : null;
+    } catch (e) { return null; }
+  }
+
+  function showWhere(animate) {
+    pickEl.hidden = !!loc;
+    foundEl.hidden = !loc;
+    changeBtn.hidden = !loc;
+    if (!loc) {
+      titleEl.textContent = 'รถเสียอยู่ตรงไหน?';
+      subEl.textContent = 'ใช้ GPS บอกพื้นที่ แล้วส่งตำแหน่งให้คนที่มาช่วยได้ทันที';
+      return;
+    }
+    var gps = loc.src === 'gps';
+    titleEl.textContent = !gps ? 'เขต' + loc.district : loc.district ? 'แถวเขต' + loc.district : 'อยู่นอกกรุงเทพฯ';
+    subEl.textContent = gps
+      ? 'GPS · แม่นยำ ±' + loc.acc + ' ม. · ' + C.formatCoord(loc)
+      : 'เลือกเอง · ใช้ GPS ถ้าต้องการส่งพิกัดที่แม่นยำ';
+    shareBtn.hidden = !gps;
+    gpsAgain.hidden = gps;
+    nearEl.innerHTML = D.nearby.map(function (n) {
+      return '<a href="' + esc(C.mapsNearbyUrl(n.q, loc)) + '" target="_blank" rel="noopener">' + esc(n.label) + icon('i-ext') + '</a>';
+    }).join('');
+    noteEl.hidden = !gps || !!loc.district;
+    noteEl.textContent = 'รายชื่อร้านและรถสไลด์ในหน้านี้เน้นกรุงเทพฯ ส่วนเบอร์ฉุกเฉิน ประกันรถ และยี่ห้อรถใช้ได้ทั่วประเทศ';
+    if (animate) {
+      FX.pinDrop($('.loc-ic', whereEl));
+      FX.cascade($$('.where-body:not([hidden]) > :not([hidden])', whereEl), { step: 60, y: 8, duration: 320 });
+    }
+  }
+
+  function locate(btn, silent) {
+    if (locating) return;
+    if (!navigator.geolocation) {
+      if (!silent) toast('อุปกรณ์นี้ไม่รองรับ GPS เลือกเขตแทนได้เลย', 4000);
+      return;
+    }
+    locating = true;
+    var stopRadar = FX.radar($('.loc-ic', whereEl));
+    var label = btn && $('span', btn), old = label && label.textContent;
+    if (btn) { btn.disabled = true; label.textContent = 'กำลังหาตำแหน่ง…'; }
+    function done() {
+      locating = false;
+      stopRadar();
+      if (btn) { btn.disabled = false; label.textContent = old; }
+    }
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      var p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      loc = {
+        lat: p.lat, lng: p.lng, acc: Math.round(pos.coords.accuracy), src: 'gps',
+        district: C.inBangkok(p) ? C.nearestDistrict(p, D.districts) : '', ts: Date.now()
+      };
+      done();
+      saveLoc();
+      showWhere(true);
+    }, function (err) {
+      done();
+      if (silent) return;
+      toast(err && err.code === 1 ? 'ไม่ได้รับอนุญาตให้ใช้ตำแหน่ง เลือกเขตแทนได้เลย' : 'หาตำแหน่งไม่สำเร็จ ลองอีกครั้ง หรือเลือกเขตแทน', 4000);
+      if (!pickEl.hidden) districtSel.focus();
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+  }
+
+  whereEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-gps]');
+    if (btn) locate(btn);
+  });
+  districtSel.addEventListener('change', function () {
+    var p = C.districtPoint(districtSel.value, D.districts);
+    if (!p) return;
+    loc = { lat: p.lat, lng: p.lng, src: 'district', district: districtSel.value, ts: Date.now() };
+    saveLoc();
+    showWhere(true);
+  });
+  changeBtn.addEventListener('click', function () {
+    loc = null;
+    saveLoc();
+    districtSel.value = '';
+    showWhere();
+    FX.cascade(pickEl.children, { step: 60, y: 8, duration: 280 });
+  });
+  shareBtn.addEventListener('click', function () {
+    var text = C.shareLocationText(loc);
+    FX.pop(shareBtn);
+    if (navigator.share) {
+      navigator.share({ title: 'ตำแหน่งรถเสีย', text: text }).catch(function () { /* ผู้ใช้กดยกเลิก */ });
+      return;
+    }
+    copyText(text).then(function () { toast('คัดลอกตำแหน่งแล้ว วางในแชตได้เลย'); },
+      function () { toast('คัดลอกไม่สำเร็จ ลองกดค้างที่พิกัดด้านบนแทน'); });
+  });
+
   // ---------- เริ่มต้น ----------
+  loc = loadLoc();
+  showWhere(false);
+  // เคยอนุญาต GPS ไว้แล้ว: หาตำแหน่งให้เลยโดยไม่ต้องกด
+  if (!loc && navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'geolocation' }).then(function (s) {
+      if (s.state === 'granted') locate(null, true);
+    }).catch(function () { /* เบราว์เซอร์ไม่รองรับ */ });
+  }
   FX.hero($('.hero-art'));
   FX.intro(doc);
   // เปิดลิงก์ที่มี #sec-... มา ให้เลื่อนไปหมวดนั้น (รายการถูกสร้างหลังโหลดหน้า)

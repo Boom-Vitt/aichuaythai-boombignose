@@ -19,6 +19,8 @@ const TYPES = {
 };
 const D = createRequire(import.meta.url)('../assets/js/data.js');
 const ITEMS = D.sections.flatMap((s) => s.items);
+const BANGNA = { latitude: 13.6702, longitude: 100.6068, accuracy: 18 };
+const CHIANG_MAI = { latitude: 18.7883, longitude: 98.9853, accuracy: 25 };
 
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -51,11 +53,14 @@ async function newPage(opts = {}) {
     viewport: { width: opts.width || 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true,
     locale: 'th-TH', timezoneId: 'Asia/Bangkok', colorScheme: opts.scheme || 'light',
     reducedMotion: opts.reducedMotion || 'no-preference',
-    serviceWorkers: opts.serviceWorkers || 'block'
+    serviceWorkers: opts.serviceWorkers || 'block',
+    geolocation: opts.geo || BANGNA,
+    permissions: opts.grantGps ? ['geolocation'] : []
   });
-  // เทสต์ไม่ต้องโทรออกจริง: กันลิงก์ tel: ไว้ แต่ยังให้แอนิเมชันของแอปทำงาน
+  // เทสต์ไม่ต้องโทรออกจริง: กันลิงก์ tel: ไว้ แต่ยังให้แอนิเมชันของแอปทำงาน และเก็บข้อความที่กดแชร์ไว้ตรวจ
   await ctx.addInitScript(() => {
     window.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('a[href^="tel:"]')) e.preventDefault(); }, true);
+    navigator.share = (data) => { window.__shared = data; return Promise.resolve(); };
   });
   const page = await ctx.newPage();
   const problems = [];
@@ -122,14 +127,13 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
       const car = m('.h-car'), truck = m('.h-truck');
       return {
         car: [car.e, car.f, Math.atan2(car.b, car.a)], truckX: truck.e,
-        badge: getComputedStyle(document.querySelector('.h-badge')).opacity,
-        steps: getComputedStyle(document.querySelector('.steps li')).opacity
+        badge: getComputedStyle(document.querySelector('.h-badge')).opacity
       };
     });
     const [cx, cy, rot] = s.car;
     assert(Math.abs(cx - 118) < 0.5 && Math.abs(cy + 26) < 0.5 && Math.abs(rot) < 0.001, 'รถไม่อยู่บนกระบะ: ' + s.car);
     assert(Math.abs(s.truckX) < 0.5, 'รถสไลด์ไม่ถึงที่: ' + s.truckX);
-    assert(s.badge === '1' && s.steps === '1', 'badge/ขั้นตอนไม่แสดง');
+    assert(s.badge === '1', 'badge ไม่แสดง');
     await page.screenshot({ path: path.join(OUT, 'home.png') });
     await page.screenshot({ path: path.join(OUT, 'home-full.png'), fullPage: true });
   });
@@ -186,7 +190,80 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
   await ctx.close();
 }
 
-// ---------- 3) จอเล็ก + โหมดมืด + ลิงก์ตรงไปหมวด ----------
+// ---------- 3) ขั้นแรก: รถเสียอยู่ตรงไหน (GPS / เลือกเขต) ----------
+{
+  const { ctx, page, problems } = await newPage({ grantGps: true });
+  await check('การ์ด "รถเสียอยู่ตรงไหน?" อยู่ก่อนรายการเบอร์ และเคยอนุญาต GPS แล้วหาตำแหน่งให้เองทันที', async () => {
+    await page.goto(SITE);
+    const first = await page.evaluate(() =>
+      !!(document.querySelector('#where').compareDocumentPosition(document.querySelector('#list')) & Node.DOCUMENT_POSITION_FOLLOWING));
+    assert(first, 'การ์ดตำแหน่งต้องอยู่ก่อนรายการเบอร์');
+    await page.waitForFunction(() => document.querySelector('#where-title').textContent === 'แถวเขตบางนา');
+    assert((await page.textContent('#where-sub')).includes('13.67020, 100.60680'), 'ไม่แสดงพิกัด');
+    assert(await page.isHidden('#where-pick') && await page.isVisible('#share-loc'), 'สถานะการ์ดผิด');
+  });
+  await check('หลังรู้ตำแหน่ง: ปุ่มค้นหาใกล้ตัวใน Google Maps ใช้พิกัด GPS และเปิดแท็บใหม่', async () => {
+    const links = await page.$$eval('#near a', (as) => as.map((a) => ({ href: a.href, target: a.target, text: a.textContent })));
+    assert(links.length === D.nearby.length, 'จำนวนปุ่มผิด');
+    assert(links.every((l) => l.href.includes('/@13.67020,100.60680,15z') && l.target === '_blank'), JSON.stringify(links[0]));
+    assert(links[0].href.includes(encodeURIComponent(D.nearby[0].q)), 'คำค้นผิด');
+  });
+  await check('แชร์ตำแหน่ง: ส่งลิงก์ปักหมุด Google Maps พร้อมชื่อเขต', async () => {
+    await page.click('#share-loc');
+    const shared = await page.evaluate(() => window.__shared);
+    assert(shared && shared.text.includes('https://www.google.com/maps/search/?api=1&query=13.67020%2C100.60680'), JSON.stringify(shared));
+    assert(shared.text.includes('แถวเขตบางนา'), 'ไม่มีชื่อเขต');
+  });
+  await check('รีโหลดแล้วยังจำตำแหน่งในแท็บเดิม / กด "เปลี่ยน" แล้วกลับไปเลือกใหม่ได้', async () => {
+    await page.reload();
+    assert((await page.textContent('#where-title')) === 'แถวเขตบางนา', 'ลืมตำแหน่งหลังรีโหลด');
+    await page.click('#where-change');
+    assert((await page.textContent('#where-title')) === 'รถเสียอยู่ตรงไหน?');
+    assert(await page.isVisible('[data-gps]') && await page.isVisible('#district'), 'ไม่แสดงตัวเลือก');
+  });
+  await check('ปุ่ม "ฉุกเฉิน" บนแถบบนพาไปเบอร์ฉุกเฉินได้ทันที ไม่ต้องบอกตำแหน่งก่อน', async () => {
+    await page.click('.tb-sos');
+    await page.waitForTimeout(900);
+    const top = await page.evaluate(() => document.getElementById('sec-emergency').getBoundingClientRect().top);
+    assert(top >= 0 && top < 320, 'ไม่เลื่อนไปเบอร์ฉุกเฉิน: ' + top);
+    assert(!problems.length, problems.join('\n'));
+  });
+  await ctx.close();
+}
+{
+  const { ctx, page, problems } = await newPage();
+  await check('ไม่อนุญาต GPS: แจ้งเตือน แล้วเลือกเขตเองได้ (ค้นหาใกล้ตัวด้วยชื่อเขต)', async () => {
+    await page.goto(SITE);
+    assert((await page.textContent('#where-title')) === 'รถเสียอยู่ตรงไหน?', 'ต้องเริ่มที่การถามตำแหน่ง');
+    await page.click('#where-pick [data-gps]');
+    await page.waitForSelector('.toast.show');
+    assert((await page.textContent('#toast')).includes('เลือกเขต'), 'ข้อความเตือนผิด');
+    await page.selectOption('#district', 'วัฒนา');
+    assert((await page.textContent('#where-title')) === 'เขตวัฒนา');
+    const href = await page.getAttribute('#near a', 'href');
+    assert(href.includes(encodeURIComponent('เขตวัฒนา')), href);
+    assert(await page.isHidden('#share-loc') && await page.isVisible('#gps-again'), 'เลือกเขตเองต้องชวนใช้ GPS แทนการแชร์');
+  });
+  await check('เลือกเขตแล้วกด "ใช้ GPS" ภายหลังได้เมื่ออนุญาตแล้ว', async () => {
+    await ctx.grantPermissions(['geolocation']);
+    await page.click('#gps-again');
+    await page.waitForFunction(() => document.querySelector('#where-title').textContent === 'แถวเขตบางนา');
+    assert(!problems.length, problems.join('\n'));
+  });
+  await ctx.close();
+}
+{
+  const { ctx, page } = await newPage({ grantGps: true, geo: CHIANG_MAI });
+  await check('อยู่นอกกรุงเทพฯ: บอกชัด ๆ และเตือนว่ารายการเน้นกรุงเทพฯ', async () => {
+    await page.goto(SITE);
+    await page.waitForFunction(() => document.querySelector('#where-title').textContent === 'อยู่นอกกรุงเทพฯ');
+    assert(await page.isVisible('#where-note'), 'ไม่มีคำเตือน');
+    assert(!(await page.evaluate(() => { document.querySelector('#share-loc').click(); return window.__shared.text; })).includes('แถวเขต'));
+  });
+  await ctx.close();
+}
+
+// ---------- 4) จอเล็ก + โหมดมืด + ลิงก์ตรงไปหมวด ----------
 {
   const { ctx, page, problems } = await newPage({ width: 360, scheme: 'dark' });
   const target = D.sections[Math.min(3, D.sections.length - 1)];
@@ -206,7 +283,7 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
   await ctx.close();
 }
 
-// ---------- 4) ทนทาน: ไม่มี anime.js / ลดการเคลื่อนไหว / เปิดจากไฟล์ / ออฟไลน์ ----------
+// ---------- 5) ทนทาน: ไม่มี anime.js / ลดการเคลื่อนไหว / เปิดจากไฟล์ / ออฟไลน์ ----------
 {
   const { ctx, page } = await newPage();
   await ctx.route('**/anime.slim.min.js', (r) => r.abort());
@@ -227,11 +304,11 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
     await page.goto(SITE);
     await page.waitForTimeout(200);
     const s = await page.evaluate(() => ({
-      steps: getComputedStyle(document.querySelector('.steps li')).opacity,
+      where: getComputedStyle(document.querySelector('#where')).opacity,
       row: getComputedStyle(document.querySelector('#list .item')).opacity,
       truck: getComputedStyle(document.querySelector('.h-truck')).transform
     }));
-    assert(s.steps === '1' && s.row === '1' && s.truck === 'none', JSON.stringify(s));
+    assert(s.where === '1' && s.row === '1' && s.truck === 'none', JSON.stringify(s));
     assert(!problems.length, problems.join('\n'));
   });
   await ctx.close();

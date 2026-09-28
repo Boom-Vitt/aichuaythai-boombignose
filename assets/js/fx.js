@@ -65,11 +65,30 @@
       });
     },
 
-    // ตอนเปิดหน้า: ขั้นตอนความปลอดภัย แล้วตามด้วยเบอร์ชุดแรก (เฉพาะที่เห็นบนจอ ไม่ต้องขยับทั้งหน้า)
+    // ตอนเปิดหน้า: หมุดตำแหน่งเด้งชวนกด แล้วเบอร์ชุดแรกค่อย ๆ ไหลขึ้น (เฉพาะที่เห็นบนจอ)
     intro: function (root) {
       if (!on()) return;
-      FX.cascade(root.querySelectorAll('.steps li'), { start: 250, step: 90, y: 10 });
-      FX.cascade(Array.prototype.slice.call(root.querySelectorAll('.sec-head, .item'), 0, 10), { start: 450, step: 45, y: 14 });
+      A.animate(root.querySelector('.where .loc-ic'), { y: [0, -9, 0, -4, 0], duration: 900, delay: 500, ease: 'outQuad' });
+      FX.cascade(Array.prototype.slice.call(root.querySelectorAll('.sec-head, .item'), 0, 10), { start: 350, step: 45, y: 14 });
+    },
+
+    // วงเรดาร์รอบหมุดตอนกำลังหาตำแหน่ง GPS — คืนฟังก์ชันไว้หยุด
+    radar: function (host) {
+      if (!on() || !host) return function () {};
+      var rings = host.querySelectorAll('.ring');
+      var a = A.animate(rings, { scale: [0.7, 2.3], opacity: [0.8, 0], duration: 1300, delay: A.stagger(420), loop: true, ease: 'outSine' });
+      return function () { a.cancel(); A.utils.set(rings, { opacity: 0 }); };
+    },
+
+    // เจอตำแหน่งแล้ว หมุดหล่นลงมาปัก
+    pinDrop: function (el) {
+      if (!on() || !el) return;
+      A.animate(el, { y: [-18, 0], duration: 750, ease: 'outBounce' });
+    },
+
+    pop: function (el) {
+      if (!on() || !el) return;
+      A.animate(el, { scale: [1, 1.05, 1], duration: 300, ease: 'outQuad' });
     },
 
     hero: function (svg) {

@@ -63,3 +63,34 @@ test('ข้อมูล: ไม่มีเบอร์ซ้ำ และม�
   const emergency = D.sections[0].items.map((it) => it.num);
   for (const must of ['1669', '191']) assert.ok(emergency.includes(must), 'ขาด ' + must);
 });
+
+test('ตำแหน่ง: ระยะทาง เขตที่ใกล้สุด และขอบเขตกรุงเทพฯ', () => {
+  const km = C.distanceKm({ lat: 13.765, lng: 100.5383 }, { lat: 13.7462, lng: 100.5347 }); // อนุสาวรีย์ฯ → สยาม
+  assert.ok(km > 2.0 && km < 2.3, String(km));
+  assert.equal(C.inBangkok({ lat: 13.7462, lng: 100.5347 }), true);
+  assert.equal(C.inBangkok({ lat: 18.7883, lng: 98.9853 }), false); // เชียงใหม่
+  assert.equal(C.nearestDistrict({ lat: 13.668, lng: 100.6045 }, D.districts), 'บางนา');
+  assert.deepEqual(C.districtPoint('จตุจักร', D.districts), { lat: 13.828, lng: 100.56 });
+  assert.equal(C.districtPoint('ไม่มีเขตนี้', D.districts), null);
+});
+
+test('ลิงก์ Google Maps: ปักหมุด และค้นหาใกล้ตัวด้วย GPS หรือชื่อเขต', () => {
+  const gps = { lat: 13.6702, lng: 100.6068, src: 'gps', district: 'บางนา' };
+  const pin = 'https://www.google.com/maps/search/?api=1&query=13.67020%2C100.60680';
+  assert.equal(C.mapsPinUrl(gps), pin);
+  assert.equal(C.formatCoord(gps), '13.67020, 100.60680');
+  assert.equal(C.mapsNearbyUrl('รถสไลด์', gps),
+    'https://www.google.com/maps/search/' + encodeURIComponent('รถสไลด์') + '/@13.67020,100.60680,15z');
+  const picked = { lat: 13.742, lng: 100.586, src: 'district', district: 'วัฒนา' };
+  assert.equal(C.mapsNearbyUrl('อู่ซ่อมรถ', picked),
+    'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('อู่ซ่อมรถ เขตวัฒนา กรุงเทพมหานคร'));
+  assert.equal(C.shareLocationText(gps), 'รถเสียอยู่ตรงนี้ (แถวเขตบางนา)\n' + pin);
+  assert.ok(!C.shareLocationText({ ...gps, district: '' }).includes('แถวเขต'));
+});
+
+test('ข้อมูลเขต: ครบ 50 เขต ไม่ซ้ำ อยู่ในกรุงเทพฯ และมีปุ่มค้นหาใกล้ตัว', () => {
+  assert.equal(D.districts.length, 50);
+  assert.equal(new Set(D.districts.map((d) => d[0])).size, 50);
+  for (const [name, lat, lng] of D.districts) assert.ok(C.inBangkok({ lat, lng }), name);
+  assert.ok(D.nearby.length >= 2 && D.nearby.every((n) => n.q && n.label));
+});
