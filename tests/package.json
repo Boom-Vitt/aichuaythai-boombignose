@@ -1,0 +1,13 @@
+{
+  "name": "rot-sia-bkk-tests",
+  "private": true,
+  "description": "ทดสอบเว็บเพื่อนยามรถเสีย กทม. — ตัวเว็บไม่ต้อง build โฟลเดอร์นี้ใช้เฉพาะตอนทดสอบ",
+  "scripts": {
+    "test": "node --test core.test.js && node e2e.mjs",
+    "unit": "node --test core.test.js",
+    "e2e": "node e2e.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}

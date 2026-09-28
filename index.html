@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เพื่อนยามรถเสีย กทม. — เรียกรถสไลด์ รถลาก จองคิวอู่ซ่อมรถ</title>
+<meta name="description" content="รถเสียในกรุงเทพฯ? หารถสไลด์ รถลาก และอู่ซ่อมรถใกล้คุณ แล้วจองคิวได้ใน 3 ขั้นตอน ใช้ง่ายบนมือถือ">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F6F4F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111214" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="th_TH">
+<meta property="og:title" content="เพื่อนยามรถเสีย กทม.">
+<meta property="og:description" content="หารถสไลด์ รถลาก อู่ซ่อมรถใกล้คุณในกรุงเทพฯ แล้วจองคิวได้ทันที">
+<link rel="icon" href="assets/img/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preload" href="assets/fonts/prompt-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/prompt-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/style.css">
+<script>
+  // ใส่คลาสก่อนวาดหน้าจอ เพื่อให้แอนิเมชันเริ่มจากท่าแรกได้โดยไม่กะพริบ
+  document.documentElement.classList.add('js');
+  if (/^#\/./.test(location.hash)) document.documentElement.classList.add('deep');
+</script>
+<script defer src="assets/vendor/anime.slim.min.js"></script>
+<script defer src="assets/js/data.js"></script>
+<script defer src="assets/js/core.js"></script>
+<script defer src="assets/js/fx.js"></script>
+<script defer src="assets/js/app.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">ข้ามไปยังเนื้อหา</a>
+
+<svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6.6 3.5h2.8l1.7 4.5-2.1 1.3a11.5 11.5 0 0 0 5.7 5.7l1.3-2.1 4.5 1.7v2.8a2 2 0 0 1-2.1 2C10.8 19 5 13.2 4.6 5.6a2 2 0 0 1 2-2.1z"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.7-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></symbol>
+  <symbol id="i-gps" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1.03 6L12 17l-5.38 2.85 1.03-6L3.3 9.6l6-.9z"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3.5 6.5h17v3.2a2.3 2.3 0 0 0 0 4.6v3.2h-17v-3.2a2.3 2.3 0 0 0 0-4.6z"/><path d="M14.5 7.5v9" stroke-dasharray="1.5 2.2"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 14.5V3.5M7.5 8 12 3.5 16.5 8"/><path d="M5 12v6.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V12"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M7 17.5v-5a5 5 0 0 1 10 0v5"/><path d="M4.5 17.5h15V21h-15z"/><path d="M12 2.5v2.2M4.3 5.8l1.6 1.6M19.7 5.8l-1.6 1.6"/></symbol>
+  <symbol id="i-sms" viewBox="0 0 24 24"><path d="M4 5h16v11h-9.5L6 19.5V16H4z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8.2 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.8"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 7.8v.01"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3.5 12.3V4.5a1 1 0 0 1 1-1h7.8l8.2 8.2-8.8 8.8z"/><circle cx="8.3" cy="8.3" r="1.4"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 3.8a4.8 4.8 0 0 0-4.4 6.5l-6 6a1.9 1.9 0 0 0 2.7 2.7l6-6a4.8 4.8 0 0 0 6.5-4.4l-2.8 2.8-2.8-.7-.7-2.8z"/></symbol>
+  <symbol id="svc-slide" viewBox="0 0 48 48">
+    <path style="fill:var(--tone2,#FF7A1A)" d="M10 25.5v-3c0-.9.6-1.6 1.5-1.8l3-.6 2.9-3.4c.5-.6 1.3-1 2.1-1h5.8c.8 0 1.5.4 2 1l2.7 3.4v5.4z"/>
+    <path d="M3.5 29.5 7 25.5h24.5v4zM32.5 31.5V19.6c0-1.2 1-2.1 2.1-2.1h4.6c.8 0 1.5.4 1.9 1l3.9 5.5c.3.4.5.9.5 1.4v6.1z"/>
+    <path style="fill:var(--tone3,#fff)" d="M34.5 19.5h4.4l3.1 4.5h-7.5z"/>
+    <rect x="5" y="29.5" width="40" height="3.5" rx="1.2"/>
+    <circle cx="13" cy="35" r="4.6"/><circle cx="37.5" cy="35" r="4.6"/>
+    <circle style="fill:var(--tone3,#fff)" cx="13" cy="35" r="1.7"/><circle style="fill:var(--tone3,#fff)" cx="37.5" cy="35" r="1.7"/>
+  </symbol>
+  <symbol id="svc-tow" viewBox="0 0 48 48">
+    <path style="fill:none;stroke:var(--tone2,#FF7A1A);stroke-width:3.4;stroke-linecap:round" d="M25 25 9.5 12.5"/>
+    <path style="fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round" d="M9.5 12.5V22"/>
+    <path style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round" d="M9.5 22v2.6a2.4 2.4 0 1 1-4.3-1.4"/>
+    <path d="M13 31.5V25h15v6.5zM28.5 31.5V19.6c0-1.2 1-2.1 2.1-2.1h5.2c.8 0 1.5.4 1.9 1l4.2 5.6c.3.4.5.9.5 1.4v6z"/>
+    <path style="fill:var(--tone3,#fff)" d="M30.5 19.5h5l3.4 4.6h-8.4z"/>
+    <rect x="11" y="31.5" width="33" height="3.2" rx="1.2"/>
+    <circle cx="17" cy="36.5" r="4.4"/><circle cx="37.5" cy="36.5" r="4.4"/>
+    <circle style="fill:var(--tone3,#fff)" cx="17" cy="36.5" r="1.6"/><circle style="fill:var(--tone3,#fff)" cx="37.5" cy="36.5" r="1.6"/>
+  </symbol>
+  <symbol id="svc-garage" viewBox="0 0 48 48">
+    <path d="M5 20 24 8.5 43 20v19h-5V24H10v15H5z"/>
+    <path d="M12.5 26.5h23v2.6h-23zM12.5 31.2h23v2.6h-23zM12.5 35.9h18V39h-18z"/>
+    <circle style="fill:var(--tone2,#FF7A1A)" cx="37" cy="36" r="8.5"/>
+    <use href="#i-wrench" x="30" y="29" width="14" height="14" style="fill:none;stroke:#1C1A17;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round"/>
+  </symbol>
+</svg>
+
+<header class="topbar">
+  <div class="tb-in">
+    <a class="tb-back" href="#/" data-back hidden aria-label="ย้อนกลับ"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg></a>
+    <a class="brand" href="#/" aria-label="เพื่อนยามรถเสีย หน้าแรก">
+      <svg class="brand-mark" viewBox="0 0 512 512" aria-hidden="true">
+        <rect width="512" height="512" rx="120" fill="#FF7A1A"/>
+        <path d="M120 280v-34q0-10 10-12l26-4 22-24q6-6 14-6h66q8 0 13 6l24 28 22 4q9 2 9 12v30z" fill="#FFF4EA"/>
+        <path d="M84 300l18-20h226v20zM334 316V214q0-14 14-14h46q10 0 16 8l32 46q8 6 8 18v44z" fill="#1C1A17"/>
+        <rect x="96" y="300" width="354" height="22" rx="6" fill="#1C1A17"/>
+        <circle cx="164" cy="342" r="38" fill="#1C1A17"/><circle cx="392" cy="342" r="38" fill="#1C1A17"/>
+      </svg>
+      <span class="brand-name">เพื่อนยามรถเสีย <small>กทม.</small></span>
+    </a>
+    <div class="tb-title" hidden><h1 id="viewTitle" tabindex="-1"></h1><p></p></div>
+    <nav class="tb-actions" aria-label="เมนูลัด">
+      <a class="tb-btn" href="#/queue" aria-label="คิวของฉัน"><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg><span class="tb-count" hidden>0</span></a>
+      <button class="tb-btn tb-sos" type="button" data-action="sos" aria-label="โทรฉุกเฉิน"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <section id="home" class="view home" aria-labelledby="homeTitle">
+    <div class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>บริการในกรุงเทพฯ</p>
+        <h1 id="homeTitle" tabindex="-1">รถเสีย? <em>เรียกคนช่วย</em><br>จองคิวได้ใน 3 ขั้นตอน</h1>
+        <p class="lead">รวมรถสไลด์ รถลาก และอู่ซ่อมรถทั่วกรุงเทพฯ เลือกเจ้าที่ใกล้คุณที่สุด แล้วจองคิวได้ทันที</p>
+      </div>
+      <svg class="hero-art" viewBox="0 28 360 152" role="img" aria-labelledby="heroArtTitle" data-action="hero">
+        <title id="heroArtTitle">ภาพรถสไลด์ถอยมายกรถที่เสียขึ้นกระบะ</title>
+        <g class="h-city">
+          <rect x="6" y="90" width="24" height="46"/><rect x="34" y="68" width="18" height="68"/>
+          <rect x="56" y="98" width="28" height="38"/>
+          <path d="M92 136 95 114h4l2-16h3l1.5-18 1.5-16 1-14 1 14 1.5 16 1.5 18h3l2 16h4l3 22z"/>
+          <rect x="136" y="82" width="20" height="54"/><rect x="160" y="56" width="14" height="80"/>
+          <rect x="178" y="94" width="30" height="42"/><rect x="214" y="74" width="18" height="62"/>
+          <rect x="236" y="102" width="32" height="34"/><rect x="274" y="84" width="20" height="52"/>
+          <rect x="298" y="64" width="16" height="72"/><rect x="318" y="98" width="36" height="38"/>
+        </g>
+        <circle class="h-sun" cx="326" cy="46" r="11"/>
+        <rect class="h-walk" x="0" y="136" width="360" height="6"/>
+        <rect class="h-road" x="0" y="142" width="360" height="38"/>
+        <path class="h-lane" d="M0 171H360"/>
+        <path class="h-warn" d="M22 145 30 159H14z"/>
+        <g class="h-truck">
+          <rect class="h-dark" x="140" y="146" width="196" height="7" rx="2"/>
+          <g class="h-bed">
+            <path class="h-bedbody" d="M136 142 146 134H262V142z"/>
+            <rect class="h-stripe" x="150" y="137" width="106" height="2.5"/>
+            <rect class="h-dark" x="258" y="112" width="6" height="30" rx="1.5"/>
+            <rect class="h-dark" x="248" y="127" width="8" height="7" rx="1.5"/>
+          </g>
+          <path class="h-cab" d="M266 153V116q0-6 6-6h34q5 0 8 4l16 18q6 2 6 8v13z"/>
+          <path class="h-glass" d="M274 116h30l12 14h-42z"/>
+          <rect class="h-dark" x="284" y="136" width="9" height="2.2" rx="1"/>
+          <rect class="h-beacon" x="282" y="104" width="12" height="6" rx="2"/>
+          <rect class="h-lamp" x="331" y="137" width="5" height="5" rx="1"/>
+          <g class="wheel"><circle class="h-tyre" cx="166" cy="150" r="10"/><circle class="h-hub" cx="166" cy="150" r="3.6"/><rect class="h-hub" x="165" y="141.5" width="2" height="4.5" rx="1"/></g>
+          <g class="wheel"><circle class="h-tyre" cx="190" cy="150" r="10"/><circle class="h-hub" cx="190" cy="150" r="3.6"/><rect class="h-hub" x="189" y="141.5" width="2" height="4.5" rx="1"/></g>
+          <g class="wheel"><circle class="h-tyre" cx="306" cy="150" r="10"/><circle class="h-hub" cx="306" cy="150" r="3.6"/><rect class="h-hub" x="305" y="141.5" width="2" height="4.5" rx="1"/></g>
+        </g>
+        <g class="h-car">
+          <path class="h-carbody" d="M42 152v-12q0-6 6-6h6l10-15q2-2 5-2h25q3 0 5 2l13 15h6q6 0 6 6v12z"/>
+          <path class="h-glass" d="M62 132l7.5-11H80v11zM84 132v-11h11l8 11z"/>
+          <rect class="h-lamp" x="119" y="137" width="5" height="4" rx="1"/>
+          <rect class="h-tail" x="42" y="137" width="4" height="4" rx="1"/>
+          <circle class="h-hz" cx="121.5" cy="139" r="3.6"/><circle class="h-hz" cx="44.5" cy="139" r="3.6"/>
+          <g class="wheel"><circle class="h-tyre" cx="60" cy="151" r="9"/><circle class="h-hub" cx="60" cy="151" r="3.2"/><rect class="h-hub" x="59" y="143.5" width="2" height="4" rx="1"/></g>
+          <g class="wheel"><circle class="h-tyre" cx="106" cy="151" r="9"/><circle class="h-hub" cx="106" cy="151" r="3.2"/><rect class="h-hub" x="105" y="143.5" width="2" height="4" rx="1"/></g>
+        </g>
+        <g class="h-smoke"><circle cx="114" cy="128" r="4"/><circle cx="119" cy="125" r="5"/><circle cx="110" cy="123" r="4.5"/></g>
+        <path class="h-cable" d="M250 131 124 147"/>
+        <g class="h-badge" opacity="0"><circle cx="201" cy="72" r="13"/><path d="M195 72.5l4 4 8-8.5"/></g>
+      </svg>
+    </div>
+
+    <ol class="steps" aria-label="ขั้นตอนการจองคิว">
+      <li><b>1</b><span>เลือกบริการ</span></li>
+      <li><b>2</b><span>เลือกร้านใกล้คุณ</span></li>
+      <li><b>3</b><span>ยืนยันจองคิว</span></li>
+    </ol>
+
+    <h2 class="h2">ต้องการความช่วยเหลือแบบไหน?</h2>
+    <nav class="services" aria-label="เลือกบริการ">
+      <a class="service" href="#/slide">
+        <span class="svc-box"><svg class="svc" aria-hidden="true"><use href="#svc-slide"/></svg></span>
+        <span class="svc-text"><strong>รถสไลด์</strong><span>ยกขึ้นทั้งคัน ปลอดภัยที่สุด · เกียร์ออโต้ / รถ EV / อุบัติเหตุ</span></span>
+        <svg class="ic chev" aria-hidden="true"><use href="#i-chev"/></svg>
+      </a>
+      <a class="service" href="#/tow">
+        <span class="svc-box"><svg class="svc" aria-hidden="true"><use href="#svc-tow"/></svg></span>
+        <span class="svc-text"><strong>รถลาก</strong><span>ยกล้อหน้าแล้วลาก ราคาประหยัด · ระยะทางใกล้</span></span>
+        <svg class="ic chev" aria-hidden="true"><use href="#i-chev"/></svg>
+      </a>
+      <a class="service" href="#/garage">
+        <span class="svc-box"><svg class="svc" aria-hidden="true"><use href="#svc-garage"/></svg></span>
+        <span class="svc-text"><strong>อู่ซ่อมรถ</strong><span>จองคิวซ่อม/เช็คสภาพ ไม่ต้องรอหน้าอู่ · บางร้านมีช่างมาหา</span></span>
+        <svg class="ic chev" aria-hidden="true"><use href="#i-chev"/></svg>
+      </a>
+    </nav>
+
+    <details class="helper">
+      <summary><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span>ไม่แน่ใจว่าควรเรียกแบบไหน?</span><svg class="ic chev" aria-hidden="true"><use href="#i-chev"/></svg></summary>
+      <ul>
+        <li><b>รถเกียร์ออโต้ · 4WD · รถหรู/รถเตี้ย · รถ EV · อุบัติเหตุ</b><span>เรียก <a href="#/slide">รถสไลด์</a> ยกทั้งคันโดยล้อไม่แตะพื้น ลดความเสี่ยงเกียร์และระบบขับเคลื่อนเสียหาย</span></li>
+        <li><b>รถเก๋งเกียร์ธรรมดา ระยะใกล้</b><span><a href="#/tow">รถลาก</a> ก็พอ ประหยัดกว่า</span></li>
+        <li><b>แบตหมด · ยางแตก · สตาร์ทไม่ติด</b><span>ลองจอง <a href="#/garage">อู่ที่มีช่างมาหา</a> อาจแก้ได้ตรงจุดโดยไม่ต้องยกรถ</span></li>
+        <li><b>ไม่แน่ใจจริง ๆ</b><span>เลือกรถสไลด์ไว้ก่อน ปลอดภัยที่สุด</span></li>
+      </ul>
+    </details>
+
+    <button class="sos-card" type="button" data-action="sos">
+      <span class="sos-ic"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg></span>
+      <span class="sos-text"><strong>มีคนเจ็บ หรือรถจอดในจุดอันตราย?</strong><span>โทรฉุกเฉิน 1669 · ตำรวจ 191 · ทางด่วน 1543</span></span>
+      <svg class="ic chev" aria-hidden="true"><use href="#i-chev"/></svg>
+    </button>
+
+    <p class="foot">เวอร์ชันสาธิต · รายชื่อผู้ให้บริการเป็นข้อมูลตัวอย่าง<br>บัตรคิวบันทึกไว้ในเครื่องของคุณ · เบอร์ฉุกเฉินเป็นเบอร์จริง</p>
+  </section>
+
+  <section id="app" class="view" hidden></section>
+</main>
+
+<dialog id="sos" class="sheet" aria-labelledby="sosTitle">
+  <div class="sheet-in">
+    <div class="grabber" aria-hidden="true"></div>
+    <div class="sheet-head">
+      <h2 id="sosTitle">โทรฉุกเฉิน</h2>
+      <button class="icon-btn" type="button" data-action="close" aria-label="ปิด"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+    <p class="sheet-sub">แตะเพื่อโทรออกได้ทันที · เบอร์จริงของหน่วยงาน</p>
+    <ul class="hotlines">
+      <li><a class="hotline red" href="tel:1669"><b>1669</b><span><strong>เจ็บป่วยฉุกเฉิน / มีผู้บาดเจ็บ</strong><small>สายด่วนการแพทย์ฉุกเฉิน</small></span><i class="call"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg></i></a></li>
+      <li><a class="hotline red" href="tel:191"><b>191</b><span><strong>แจ้งเหตุด่วน เหตุร้าย</strong><small>ตำรวจ</small></span><i class="call"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg></i></a></li>
+      <li><a class="hotline" href="tel:1543"><b>1543</b><span><strong>รถเสียบนทางด่วน</strong><small>การทางพิเศษแห่งประเทศไทย</small></span><i class="call"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg></i></a></li>
+      <li><a class="hotline" href="tel:1193"><b>1193</b><span><strong>รถเสียบนทางหลวง</strong><small>ตำรวจทางหลวง</small></span><i class="call"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg></i></a></li>
+      <li><a class="hotline" href="tel:1137"><b>1137</b><span><strong>ขอความช่วยเหลือบนถนน</strong><small>สถานีวิทยุ จส.100</small></span><i class="call"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg></i></a></li>
+      <li><a class="hotline" href="tel:1644"><b>1644</b><span><strong>ขอความช่วยเหลือบนถนน</strong><small>สวพ. FM91</small></span><i class="call"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg></i></a></li>
+    </ul>
+    <h3 class="h3">ทำทันทีเมื่อรถเสีย</h3>
+    <ol class="safety">
+      <li>เปิดไฟฉุกเฉิน แล้วค่อย ๆ เข้าชิดซ้ายหรือไหล่ทาง</li>
+      <li>ตั้งป้ายสามเหลี่ยมหรือกรวยไว้ท้ายรถ ให้ห่างพอที่คันหลังจะเห็นทัน</li>
+      <li>ถ้าอยู่ในรถไม่ปลอดภัย ให้ออกไปรอในจุดที่พ้นแนวรถวิ่ง อย่ายืนหลังรถหรือบนผิวถนน</li>
+      <li>จดจุดสังเกต ชื่อซอย หรือหลักกิโลเมตร ไว้บอกคนที่มาช่วย</li>
+    </ol>
+    <p class="tip"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span>ประกันรถหลายกรมธรรม์มีบริการรถยกฉุกเฉิน ลองโทรเบอร์บนกรมธรรม์หรือบัตรประกันของคุณด้วย</span></p>
+  </div>
+</dialog>
+
+<dialog id="ask" class="sheet" aria-labelledby="askTitle" aria-describedby="askText">
+  <form class="sheet-in" method="dialog">
+    <div class="grabber" aria-hidden="true"></div>
+    <h2 id="askTitle" class="ask-title"></h2>
+    <p id="askText" class="sheet-sub"></p>
+    <div class="ask-actions">
+      <button class="btn ghost" value="no" data-role="no"></button>
+      <button class="btn danger" value="yes" data-role="yes"></button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<noscript><p class="noscript">กรุณาเปิด JavaScript เพื่อจองคิว · กรณีฉุกเฉินโทร 1669 (เจ็บป่วย) หรือ 191 (ตำรวจ)</p></noscript>
+</body>
+</html>

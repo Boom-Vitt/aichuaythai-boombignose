@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF9142"/>
+      <stop offset="1" stop-color="#F2600F"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <g id="truck">
+    <path d="M120 280v-34q0-10 10-12l26-4 22-24q6-6 14-6h66q8 0 13 6l24 28 22 4q9 2 9 12v30z" fill="#FFF4EA"/>
+    <path d="M200 212h30v24h-50zM242 212h20l20 24h-40z" fill="#F2600F"/>
+    <path d="M84 300l18-20h226v20z" fill="#1C1A17"/>
+    <path d="M334 316V214q0-14 14-14h46q10 0 16 8l32 46q8 6 8 18v44z" fill="#1C1A17"/>
+    <path d="M352 216h38l24 36h-62z" fill="#FF9142"/>
+    <rect x="96" y="300" width="354" height="22" rx="6" fill="#1C1A17"/>
+    <circle cx="164" cy="342" r="38" fill="#1C1A17"/>
+    <circle cx="164" cy="342" r="14" fill="#FF9142"/>
+    <circle cx="392" cy="342" r="38" fill="#1C1A17"/>
+    <circle cx="392" cy="342" r="14" fill="#FF9142"/>
+  </g>
+</svg>
