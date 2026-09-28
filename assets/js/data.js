@@ -5,6 +5,8 @@
  * sections : หมวดเรียงตามลำดับที่แสดง (หมวดแรกควรเป็นฉุกเฉิน)
  *   id, title, short (ชื่อบนปุ่มหมวด), sub (คำอธิบาย), icon (ไอคอนใน index.html), tone: 'red' = สีฉุกเฉิน
  *   note  : ข้อความเตือนใต้หมวด (ถ้ามี)
+ *   near  : หมวดที่ขึ้นกับพื้นที่ ('tow' | 'shop' = ชนิดใน places) เมื่อรู้ตำแหน่ง หมวดนี้จะขึ้นก่อน
+ *           แสดงเจ้าที่ใกล้สุดจาก places ตามด้วย items (ติดป้าย wideTag) ใช้ชื่อ nearTitle และข้อความ nearNote
  *   items : { num: เบอร์ตามที่ให้กด, name, desc (ไม่เกิน 60 ตัวอักษร), tags: คำค้นเพิ่มเติม, src: หน้าเว็บทางการที่ยืนยันเบอร์ }
  *
  * ทุกเบอร์ต้องมีแหล่งที่มา (src) จากเว็บไซต์ทางการของหน่วยงาน/บริษัทนั้น ๆ
@@ -13,7 +15,7 @@
  * places    : ร้านสาขาและรถสไลด์ประจำพื้นที่ ใช้ทำรายการ "ใกล้คุณ" (แตะโทรได้ในหน้าเว็บเลย) หลังรู้ตำแหน่ง
  *             { kind: 'tow' รถสไลด์/รถยก | 'shop' อู่/ร้านยาง/แบต, name, district (1 ใน 50 เขต),
  *               area (ถนน/จุดสังเกต), num, hours, src }  ใส่ lat/lng ได้ถ้ารู้พิกัดจริง ไม่งั้นใช้จุดกึ่งกลางเขต
- *             รถสไลด์ที่ให้บริการทั่วกรุงเทพฯ ในหมวด 'tow' ด้านล่าง จะขึ้นในรายการใกล้คุณด้วยเสมอ
+ *             ใช้ในหมวดที่มี near ตรงกับ kind (รถสไลด์ทั่วกรุงเทพฯ และเบอร์กลางของร้าน ยังอยู่ท้ายหมวดเสมอ)
  * districts : 50 เขตของกรุงเทพฯ [ชื่อเขต, lat, lng] (จุดกึ่งกลางโดยประมาณ) ใช้บอกว่า GPS อยู่แถวเขตไหน
  *             และให้เลือกเขตเองเมื่อไม่เปิด GPS
  */
@@ -34,6 +36,18 @@
         num: '085-569-9992', src: 'https://www.xn--12c5beii1bdg6b9f6c.com/' },
       { kind: 'tow', name: 'AKA SLIDE ON รถยก รถสไลด์', district: 'คันนายาว', area: 'ถ.รามอินทรา · 24 ชม.',
         num: '092-539-9655', src: 'https://www.akaslideon.com/contact/' },
+      { kind: 'tow', name: 'เจ&โจ้ สไลด์ออน รถยก รถสไลด์', district: 'บางแค', area: 'ถ.เพชรเกษม · 24 ชม.',
+        num: '080-049-7782', src: 'https://www.xn--12c6afdibii6c6aekd3ah5eunxhyf.com/' },
+      { kind: 'tow', name: 'อู่ช่างเหน่งสไลด์ออน รถยก รถสไลด์', district: 'บางนา', area: 'ซ.ลาซาล 59 ถ.สุขุมวิท 105 · 24 ชม.',
+        num: '061-712-5864', src: 'https://www.xn--12cay3cs4cfu3iwhsc.com/' },
+      { kind: 'tow', name: 'เจดีเอ็ม ทรานสปอร์ต (JDM) รถสไลด์', district: 'คลองเตย', area: 'ถ.สุขุมวิท แขวงพระโขนง · 24 ชม.',
+        num: '097-830-8888', src: 'https://www.jdmbangkok.com/' },
+      { kind: 'tow', name: 'ทองสไลด์ออน รถยก รถสไลด์', district: 'ลาดกระบัง', area: 'ซอย 40/1 แขวงลาดกระบัง · 24 ชม.',
+        num: '094-325-6037', src: 'https://xn--12cas4cajb9a4didewb6e4esam25arf.com/' },
+      { kind: 'tow', name: 'USL SLIDEON รถยก รถสไลด์', district: 'สายไหม', area: 'หมู่บ้านมัณฑนา แขวงออเงิน · 24 ชม.',
+        num: '065-650-5115', src: 'http://usl-slideon.com/%E0%B8%95%E0%B8%B4%E0%B8%94%E0%B8%95%E0%B9%88%E0%B8%AD%E0%B9%80%E0%B8%A3%E0%B8%B2.html' },
+      { kind: 'tow', name: 'HybridCar อู่ไฮบริด รถยก รถสไลด์', district: 'สายไหม', area: 'ซ.วัชรพล 4 แขวงคลองถนน · 24 ชม.',
+        num: '093-995-2465', src: 'https://www.hybridcar.co.th/%E0%B8%9A%E0%B8%A3%E0%B8%B4%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%A3%E0%B8%96%E0%B8%A2%E0%B8%81%E0%B8%A3%E0%B8%96%E0%B8%AA%E0%B9%84%E0%B8%A5%E0%B8%94%E0%B9%8C%E0%B8%AD%E0%B8%AD%E0%B8%9924%E0%B8%8A%E0%B8%A1/' },
 
       // ---------- อู่ / ร้านยาง / แบตเตอรี่ (สาขาร้านเครือข่าย) ----------
       { kind: 'shop', name: 'บี-ควิก ลาซาล อเวนิว', district: 'บางนา', area: 'ถ.ลาซาล-แบริ่ง',
@@ -65,7 +79,29 @@
       { kind: 'shop', name: 'ค็อกพิท บางแค', district: 'บางแค', area: 'ปั๊มเชลล์ ถ.เพชรเกษม ตรงข้ามเดอะมอลล์ บางแค', hours: '08:00–20:00 น.',
         num: '094-216-6726', src: 'https://cockpit.co.th/post/2182/COCKPIT-Bang-Khae-is-Ready-to-Serve-Customers-with-Incredible-Offers-Celebrating-Its-New-Branch-Opening' },
       { kind: 'shop', name: 'ค็อกพิท จรัญสนิทวงศ์ 37', district: 'บางกอกน้อย', area: 'ในแม็คโคร จรัญสนิทวงศ์ แขวงบางขุนศรี', hours: '08:00–20:00 น.',
-        num: '090-980-7910', src: 'https://www.cockpit.co.th/post/374/%E0%B8%88%E0%B8%A3%E0%B8%B1%E0%B8%8D%E0%B8%AA%E0%B8%99%E0%B8%B4%E0%B8%97%E0%B8%A7%E0%B8%87%E0%B8%A8%E0%B9%8C-%E0%B8%95%E0%B8%B0%E0%B8%A5%E0%B8%B8%E0%B8%A2%E0%B8%A2%E0%B9%88%E0%B8%B2%E0%B8%99%E0%B8%AD%E0%B8%A3%E0%B9%88%E0%B8%AD%E0%B8%A2-%E0%B8%AA%E0%B8%A7%E0%B8%A3%E0%B8%A3%E0%B8%84%E0%B9%8C%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B8%84%E0%B8%99%E0%B8%8A%E0%B8%AD%E0%B8%9A%E0%B8%81%E0%B8%B4%E0%B8%99-%E0%B8%9F%E0%B8%B4%E0%B8%99%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B8%AD%E0%B8%A3%E0%B9%88%E0%B8%AD%E0%B8%A2%E0%B8%9D%E0%B8%B1%E0%B9%88%E0%B8%87%E0%B8%98%E0%B8%99%E0%B8%9A%E0%B8%B8%E0%B8%A3%E0%B8%B5' }
+        num: '090-980-7910', src: 'https://www.cockpit.co.th/post/374/%E0%B8%88%E0%B8%A3%E0%B8%B1%E0%B8%8D%E0%B8%AA%E0%B8%99%E0%B8%B4%E0%B8%97%E0%B8%A7%E0%B8%87%E0%B8%A8%E0%B9%8C-%E0%B8%95%E0%B8%B0%E0%B8%A5%E0%B8%B8%E0%B8%A2%E0%B8%A2%E0%B9%88%E0%B8%B2%E0%B8%99%E0%B8%AD%E0%B8%A3%E0%B9%88%E0%B8%AD%E0%B8%A2-%E0%B8%AA%E0%B8%A7%E0%B8%A3%E0%B8%A3%E0%B8%84%E0%B9%8C%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B8%84%E0%B8%99%E0%B8%8A%E0%B8%AD%E0%B8%9A%E0%B8%81%E0%B8%B4%E0%B8%99-%E0%B8%9F%E0%B8%B4%E0%B8%99%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B8%AD%E0%B8%A3%E0%B9%88%E0%B8%AD%E0%B8%A2%E0%B8%9D%E0%B8%B1%E0%B9%88%E0%B8%87%E0%B8%98%E0%B8%99%E0%B8%9A%E0%B8%B8%E0%B8%A3%E0%B8%B5' },
+
+      // ---------- ร้านแบตเตอรี่ / ยาง ที่ไปเปลี่ยนให้ถึงที่ และร้านยางเครือข่าย ----------
+      { kind: 'shop', name: 'ไทร์พลัส ศรีนครินทร์ ออโต้พลัส', district: 'ประเวศ', area: 'ถ.ศรีนครินทร์ แขวงหนองบอน',
+        num: '02-748-0727', src: 'https://www.michelin.co.th/auto/dealer-locator/%E0%B8%81%E0%B8%A3%E0%B8%B8%E0%B8%87%E0%B9%80%E0%B8%97%E0%B8%9E%E0%B8%A1%E0%B8%AB%E0%B8%B2%E0%B8%99%E0%B8%84%E0%B8%A3/%E0%B9%84%E0%B8%97%E0%B8%A3-%E0%B8%9E%E0%B8%A5-%E0%B8%AA-%E0%B8%A8%E0%B8%A3%E0%B8%B5%E0%B8%99%E0%B8%84%E0%B8%A3%E0%B8%B4%E0%B8%99%E0%B8%97%E0%B8%A3-%E0%B8%AD%E0%B8%AD%E0%B9%82%E0%B8%95-%E0%B8%9E%E0%B8%A5-%E0%B8%AA-1225279066' },
+      { kind: 'shop', name: 'แบตเตอรี่โปร ส่ง-เปลี่ยนแบตถึงที่', district: 'บางแค', area: 'ถ.กาญจนาภิเษก แขวงหลักสอง', hours: '08:00–18:00 น.',
+        num: '080-246-8012', src: 'https://www.batteryprothailand.com/' },
+      { kind: 'shop', name: 'OkBatteryShop เปลี่ยนแบตนอกสถานที่', district: 'ห้วยขวาง', area: 'ถ.รัชดาภิเษก · 24 ชม.',
+        num: '088-447-6577', src: 'https://www.okbatteryshop.com/index.php/contact' },
+      { kind: 'shop', name: 'บีบีแบตเตอรี่ ส่งเปลี่ยนแบตถึงที่', district: 'ลาดพร้าว', area: 'โชคชัย 4 ซอย 72', hours: 'เปิดทุกวัน',
+        num: '087-908-4528', src: 'https://www.batterybbdelivery.com/contact.php' },
+
+      // ---------- ฟิต ออโต้ ฝั่งเหนือ/ตะวันออก ----------
+      { kind: 'shop', name: 'ฟิต ออโต้ สายไหม 56', district: 'สายไหม', area: 'โครงการ ICON 56 ย่านสายไหม 56',
+        num: '02-149-1677', src: 'https://www.pttfitauto.com/th/other/news/170747239914612' },
+      { kind: 'shop', name: 'ฟิต ออโต้ รามอินทรา กม.3', district: 'บางเขน', area: 'ถ.รามอินทรา กม.3',
+        num: '02-551-4059', src: 'https://www.pttfitauto.com/th/other/news/170668258114609' },
+      { kind: 'shop', name: 'ฟิต ออโต้ วิภาวดี 62', district: 'หลักสี่', area: 'ย่าน ซ.วิภาวดีรังสิต 62',
+        num: '080-047-3863', src: 'https://www.pttfitauto.com/th/other/news/170202920914580' },
+      { kind: 'shop', name: 'ฟิต ออโต้ ลาดพร้าว-วังหิน', district: 'ลาดพร้าว', area: 'ถ.ลาดพร้าว-วังหิน',
+        num: '02-118-6231', src: 'https://www.pttfitauto.com/th/other/news/167929596814419' },
+      { kind: 'shop', name: 'ฟิต ออโต้ เคหะร่มเกล้า', district: 'ลาดกระบัง', area: 'ย่านเคหะร่มเกล้า',
+        num: '02-136-0967', src: 'https://www.pttfitauto.com/th/other/news/168671602914471' }
     ],
 
     districts: [
@@ -129,6 +165,8 @@
       {
         id: 'tow', title: 'รถสไลด์ / รถยก (เอกชน)', short: 'รถสไลด์', icon: 'i-truck',
         sub: 'บริการ 24 ชม. ครอบคลุมกรุงเทพฯ',
+        near: 'tow', nearTitle: 'รถสไลด์ / รถยก ใกล้คุณ', wideTag: 'ทั่วกรุงเทพฯ',
+        nearNote: 'ระยะทางคิดจากเขตที่รถสไลด์ตั้งอยู่ โทรถามก่อนว่ามาถึงคุณได้เร็วแค่ไหน',
         note: 'ราคาขึ้นกับระยะทาง สอบถามราคาก่อนเรียกรถ · รถเสียบนทางด่วนให้โทร 1543 ก่อน · ถ้ามีประกันรถ ลองโทรหาประกันก่อน อาจมีรถยกให้ตามเงื่อนไขกรมธรรม์',
         items: [
           { num: '092-996-8888', name: 'ซูโม่ รถสไลด์', desc: 'บริษัท ซูโม่ โรดไซด์ เซอร์วิส จำกัด · 24 ชม.',
@@ -209,6 +247,8 @@
       {
         id: 'service', title: 'อู่ / ร้านบริการรถเครือข่าย', short: 'อู่/ร้านซ่อม', icon: 'i-wrench',
         sub: 'ยาง แบตเตอรี่ น้ำมันเครื่อง ช่วงล่าง มีหลายสาขาในกรุงเทพฯ',
+        near: 'shop', nearTitle: 'อู่ / ร้านยาง / แบต ใกล้คุณ', wideTag: 'เบอร์กลาง',
+        nearNote: 'ระยะทางคิดจากเขตที่สาขาตั้งอยู่ · โทรสาขาไม่ติด ลองเบอร์กลางของร้านด้านล่าง',
         items: [
           { num: '1153', name: 'บี-ควิก (B-Quik)', desc: 'ยาง แบต น้ำมันเครื่อง เบรก · โทร 08:00–21:00 น.',
             tags: ['b-quik', 'bquik', 'ยาง', 'แบตเตอรี่'], src: 'https://www.b-quik.com/en/contact' },

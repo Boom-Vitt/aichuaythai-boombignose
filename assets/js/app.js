@@ -18,6 +18,8 @@
   function icon(id) { return '<svg class="ic" aria-hidden="true"><use href="#' + id + '"/></svg>'; }
 
   var listEl = $('#list'), chipsEl = $('#chips'), q = $('#q'), clearBtn = $('#q-clear'), emptyEl = $('#empty');
+  var loc = null;                               // ตำแหน่งที่ผู้ใช้บอก (GPS หรือเลือกเขต)
+  var rows = [], secEls = [], chipEls = [];     // rows: [{ li, it, sec }] เรียงตามลำดับที่แสดง
 
   // ---------- สร้างรายการเบอร์ ----------
   // เบอร์สั้น (1669) ตัวใหญ่ชิดซ้าย · เบอร์ยาว (02-xxx-xxxx) อยู่ใต้ชื่อ เพื่อไม่ให้ชื่อถูกบีบ
@@ -27,41 +29,80 @@
     return '<li class="item"><a class="num' + (sec.tone ? ' ' + sec.tone : '') + (long ? ' long' : '') + '" href="' + C.telHref(it.num) + '">' +
       (long ? '' : num) +
       '<span class="t"><strong>' + esc(it.name) + '</strong>' + (long ? num : '') +
-        '<small>' + (it.tag ? '<span class="tag">' + esc(it.tag) + '</span>' : '') + esc(it.desc) + '</small></span>' +
+        '<small>' + (it.tag ? '<span class="tag' + (it.tagAny ? ' any' : '') + '">' + esc(it.tag) + '</span>' : '') + esc(it.desc) + '</small></span>' +
       '<i class="call" aria-hidden="true"><i class="wave"></i><i class="wave"></i>' + icon('i-phone') + '</i>' +
       '</a></li>';
   }
 
-  function section(sec) {
-    return '<section class="sec' + (sec.tone ? ' ' + sec.tone : '') + '" id="sec-' + sec.id + '" aria-labelledby="h-' + sec.id + '">' +
+  // ร้าน/รถสไลด์จาก places → แถวในรายการ พร้อมระยะทางจากตำแหน่งผู้ใช้
+  function placeItem(x) {
+    var p = x.p;
+    return {
+      num: p.num, name: p.name, tag: x.same ? 'เขตเดียวกับคุณ' : C.formatApproxKm(x.km), tags: ['ใกล้คุณ'],
+      desc: ['เขต' + p.district, p.area, p.hours].filter(Boolean).join(' · ')
+    };
+  }
+
+  // หมวดที่ขึ้นกับพื้นที่ (near): รู้ตำแหน่งแล้ว เจ้าที่ใกล้สุดขึ้นก่อน ตามด้วยเบอร์ที่ใช้ได้ทุกเขต
+  function build(sec) {
+    if (!sec.near || !loc) return { sec: sec, items: sec.items, local: null };
+    var local = C.localPlaces(D.places, loc, D.districts, sec.near);
+    return {
+      sec: sec, local: local,
+      items: local.map(placeItem).concat(sec.items.map(function (it) {
+        return { num: it.num, name: it.name, desc: it.desc, tags: it.tags, tag: sec.wideTag, tagAny: true };
+      }))
+    };
+  }
+
+  function section(b) {
+    var sec = b.sec, located = !!b.local;
+    var sub = located ? esc((loc.district ? 'แถวเขต' + loc.district : 'รอบตัวคุณ') + ' · ใกล้สุดขึ้นก่อน')
+      : (loc ? '<span class="tag any">ใช้ได้ทุกพื้นที่</span>' : '') + esc(sec.sub) +
+        (sec.near ? ' · <a class="sec-hint" href="#where">บอกตำแหน่ง เพื่อดูเจ้าที่ใกล้คุณ</a>' : '');
+    var notes = (located && sec.nearNote ? [sec.nearNote] : []).concat(sec.note ? [sec.note] : []);
+    return '<section class="sec' + (sec.tone ? ' ' + sec.tone : '') + '" id="sec-' + sec.id + '" aria-labelledby="h-' + sec.id + '"' +
+        (located ? ' data-near' : '') + '>' +
       '<div class="sec-head"><span class="sec-ic">' + icon(sec.icon) + '</span><div>' +
-        '<h2 id="h-' + sec.id + '">' + esc(sec.title) + '</h2>' + (sec.sub ? '<p>' + esc(sec.sub) + '</p>' : '') +
+        '<h2 id="h-' + sec.id + '">' + esc(located ? sec.nearTitle : sec.title) + '</h2><p>' + sub + '</p>' +
       '</div></div>' +
-      '<ul class="nums">' + sec.items.map(function (it) { return row(it, sec); }).join('') + '</ul>' +
-      (sec.note ? '<p class="sec-note">' + icon('i-info') + '<span>' + esc(sec.note) + '</span></p>' : '') +
+      '<ul class="nums">' +
+        (located && !b.local.length ? '<li class="near-empty">ยังไม่มีเจ้าที่อยู่ใกล้คุณในรายการ ลองเบอร์ด้านล่างนี้</li>' : '') +
+        b.items.map(function (it) { return row(it, sec); }).join('') +
+      '</ul>' +
+      notes.map(function (n) { return '<p class="sec-note">' + icon('i-info') + '<span>' + esc(n) + '</span></p>'; }).join('') +
       '</section>';
   }
 
-  listEl.innerHTML = D.sections.map(section).join('');
-  chipsEl.innerHTML = D.sections.map(function (s) {
-    return '<a class="chip' + (s.tone ? ' ' + s.tone : '') + '" href="#sec-' + s.id + '">' + esc(s.short || s.title) + '</a>';
-  }).join('');
-  $('#checked').textContent = C.formatThaiDate(D.checked);
-
-  var rows = [];   // [{ li, it, sec }] เรียงตามลำดับที่แสดง
-  var secEls = $$('.sec', listEl), chipEls = $$('.chip', chipsEl);
-  D.sections.forEach(function (sec, si) {
-    $$('.item', secEls[si]).forEach(function (li, ii) { rows.push({ li: li, it: sec.items[ii], sec: sec }); });
-  });
+  // วาดรายการใหม่ทุกครั้งที่ตำแหน่งเปลี่ยน: รู้ตำแหน่งแล้ว หมวดที่ขึ้นกับพื้นที่ขึ้นก่อน
+  function renderList(animate) {
+    var order = !loc ? D.sections : D.sections.filter(function (s) { return s.near; })
+      .concat(D.sections.filter(function (s) { return !s.near; }));
+    var built = order.map(build);
+    listEl.innerHTML = built.map(section).join('');
+    chipsEl.innerHTML = order.map(function (s) {
+      return '<a class="chip' + (s.tone ? ' ' + s.tone : '') + '" href="#sec-' + s.id + '">' + esc(s.short || s.title) + '</a>';
+    }).join('');
+    secEls = $$('.sec', listEl);
+    chipEls = $$('.chip', chipsEl);
+    rows = [];
+    built.forEach(function (b, si) {
+      $$('.item', secEls[si]).forEach(function (li, ii) { rows.push({ li: li, it: b.items[ii], sec: b.sec }); });
+    });
+    if (io) { io.disconnect(); secEls.forEach(function (el) { io.observe(el); }); }
+    if (q.value) applySearch(true);
+    if (animate) FX.cascade($$('[data-near] .item, [data-near] .near-empty', listEl).slice(0, 10), { start: 250, step: 60, y: 12 });
+  }
 
   // ---------- ค้นหา ----------
-  function applySearch() {
+  function applySearch(quiet) {
     var query = q.value, appeared = [];
     rows.forEach(function (r) {
       var show = C.matches(r.it, query, r.sec);
       if (show && r.li.hidden) appeared.push(r.li);
       r.li.hidden = !show;
     });
+    $$('.near-empty', listEl).forEach(function (li) { li.hidden = !!query; });
     var any = false;
     secEls.forEach(function (el, i) {
       var visible = $$('.item', el).some(function (li) { return !li.hidden; });
@@ -71,7 +112,7 @@
     });
     emptyEl.hidden = any;
     clearBtn.hidden = !query;
-    FX.cascade(appeared.slice(0, 12), { step: 25, start: 0, y: 8, duration: 280 });
+    if (quiet !== true) FX.cascade(appeared.slice(0, 12), { step: 25, start: 0, y: 8, duration: 280 });
   }
 
   q.addEventListener('input', applySearch);
@@ -88,18 +129,16 @@
       if (on) chipsEl.scrollTo({ left: c.offsetLeft - (chipsEl.clientWidth - c.offsetWidth) / 2, behavior: FX.enabled() ? 'smooth' : 'auto' });
     });
   }
-  if ('IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) { if (e.isIntersecting) setActive(e.target.id); });
-    }, { rootMargin: '-140px 0px -55% 0px' });
-    secEls.forEach(function (el) { io.observe(el); });
-  }
+  var io = 'IntersectionObserver' in window ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) setActive(e.target.id); });
+  }, { rootMargin: '-140px 0px -55% 0px' }) : null;
   chipsEl.addEventListener('click', function (e) {
     var chip = e.target.closest('.chip');
     if (!chip) return;
     var target = $(chip.getAttribute('href'));
     if (target) setTimeout(function () { FX.flash($('.sec-ic', target)); }, 350);
   });
+  $('#checked').textContent = C.formatThaiDate(D.checked);
 
   // ---------- แตะเพื่อโทร: ไอคอนโทรศัพท์สั่นเหมือนกำลังเรียกสาย ----------
   doc.addEventListener('click', function (e) {
@@ -137,10 +176,7 @@
   var whereEl = $('#where'), pickEl = $('#where-pick'), foundEl = $('#where-found');
   var titleEl = $('#where-title'), subEl = $('#where-sub'), changeBtn = $('#where-change');
   var districtSel = $('#district'), shareBtn = $('#share-loc'), gpsAgain = $('#gps-again');
-  var noteEl = $('#where-note');
-  var nearbyEl = $('#nearby'), nearTow = $('#near-tow'), nearShop = $('#near-shop'), nearbySub = $('#nearby-sub');
-  var wideTow = D.sections.filter(function (s) { return s.id === 'tow'; }).map(function (s) { return s.items; })[0] || [];
-  var loc = null, locating = false;
+  var noteEl = $('#where-note'), locating = false;
 
   districtSel.innerHTML += D.districts.map(function (d) { return d[0]; })
     .sort(function (a, b) { return a.localeCompare(b, 'th'); })
@@ -161,7 +197,7 @@
     changeBtn.hidden = !loc;
     if (!loc) {
       titleEl.textContent = 'รถเสียอยู่ตรงไหน?';
-      subEl.textContent = 'ใช้ GPS บอกพื้นที่ แล้วส่งตำแหน่งให้คนที่มาช่วยได้ทันที';
+      subEl.textContent = 'ใช้ GPS หาร้านและรถสไลด์ใกล้คุณ แล้วแตะโทรได้เลย';
       return;
     }
     var gps = loc.src === 'gps';
@@ -179,26 +215,23 @@
     }
   }
 
-  // ---------- ใกล้คุณ: รถสไลด์และร้านที่ใกล้ที่สุด แตะโทรได้ในหน้านี้เลย ----------
-  function nearItem(x) {
-    var p = x.p;
-    return row({
-      num: p.num, name: p.name, tag: x.same ? 'เขตเดียวกับคุณ' : '',
-      desc: [x.same ? 'เขต' + p.district : 'เขต' + p.district + ' ' + C.formatApproxKm(x.km), p.area, p.hours].filter(Boolean).join(' · ')
-    }, {});
-  }
-
-  function renderNearby(animate) {
-    nearbyEl.hidden = !loc;
-    if (!loc) return;
-    nearTow.innerHTML = wideTow.map(function (it) {
-      return row({ num: it.num, name: it.name, desc: it.desc, tag: 'มาหาคุณได้' }, {});
-    }).concat(C.nearestPlaces(D.places, loc, D.districts, 'tow', 4).map(nearItem)).join('');
-    var shops = C.nearestPlaces(D.places, loc, D.districts, 'shop', 6);
-    nearShop.innerHTML = shops.length ? shops.map(nearItem).join('')
-      : '<li class="near-empty">ยังไม่มีสาขาในรายการที่อยู่ใกล้คุณ ลองโทรเบอร์กลางของร้านเครือข่ายด้านล่าง</li>';
-    nearbySub.textContent = (loc.district ? 'แถวเขต' + loc.district : 'รอบตัวคุณ') + ' · แตะเพื่อโทรได้ทันที';
-    if (animate) FX.cascade($$('.item, .near-empty', nearbyEl), { start: 250, step: 60, y: 12 });
+  // ตำแหน่งเปลี่ยน: อัปเดตการ์ดและรายการ ถ้าผู้ใช้เลื่อนลงไปดูรายการอยู่ (เช่น GPS หาเจอทีหลัง)
+  // ให้หมวดที่กำลังดูอยู่ที่เดิมบนจอ ไม่ให้เบอร์ขยับใต้นิ้วจนแตะผิด
+  function applyLoc(animate) {
+    // หมวดที่อยู่กลางจอคือหมวดที่ผู้ใช้กำลังดู (ถ้ากลางจอเป็นการ์ดตำแหน่งหรือภาพหัวเว็บ ก็ไม่ต้องล็อก)
+    var mid = doc.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+    var sec = mid && mid.closest && mid.closest('#list .sec');
+    var keep = sec ? { id: sec.id, top: sec.getBoundingClientRect().top } : null;
+    saveLoc();
+    showWhere(animate);
+    renderList(animate);
+    var kept = keep && doc.getElementById(keep.id);
+    if (kept && !kept.hidden) {
+      var html = doc.documentElement, was = html.style.scrollBehavior;
+      html.style.scrollBehavior = 'auto';
+      window.scrollBy(0, kept.getBoundingClientRect().top - keep.top);
+      html.style.scrollBehavior = was;
+    }
   }
 
   function locate(btn, silent) {
@@ -223,9 +256,7 @@
         district: C.inBangkok(p) ? C.nearestDistrict(p, D.districts) : '', ts: Date.now()
       };
       done();
-      saveLoc();
-      showWhere(true);
-      renderNearby(true);
+      applyLoc(true);
       if (btn) whereEl.scrollIntoView({ behavior: FX.enabled() ? 'smooth' : 'auto', block: 'start' });
     }, function (err) {
       done();
@@ -243,16 +274,12 @@
     var p = C.districtPoint(districtSel.value, D.districts);
     if (!p) return;
     loc = { lat: p.lat, lng: p.lng, src: 'district', district: districtSel.value, ts: Date.now() };
-    saveLoc();
-    showWhere(true);
-    renderNearby(true);
+    applyLoc(true);
   });
   changeBtn.addEventListener('click', function () {
     loc = null;
-    saveLoc();
     districtSel.value = '';
-    showWhere();
-    renderNearby();
+    applyLoc(false);
     FX.cascade(pickEl.children, { step: 60, y: 8, duration: 280 });
   });
   shareBtn.addEventListener('click', function () {
@@ -269,7 +296,7 @@
   // ---------- เริ่มต้น ----------
   loc = loadLoc();
   showWhere(false);
-  renderNearby(false);
+  renderList(false);
   // เคยอนุญาต GPS ไว้แล้ว: หาตำแหน่งให้เลยโดยไม่ต้องกด
   if (!loc && navigator.permissions && navigator.permissions.query) {
     navigator.permissions.query({ name: 'geolocation' }).then(function (s) {

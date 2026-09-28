@@ -94,6 +94,12 @@
       .slice(0, limit || 5);
   }
 
+  // เจ้าที่ขึ้นในหมวด "ใกล้คุณ": ไม่เกิน 5 เจ้าในรัศมี 15 กม. ถ้าไม่มีเลย เอา 2 เจ้าที่ใกล้สุดในรัศมี 30 กม.
+  function localPlaces(places, loc, districts, kind) {
+    var near = nearestPlaces(places, loc, districts, kind, 5, 15);
+    return near.length ? near : nearestPlaces(places, loc, districts, kind, 2, 30);
+  }
+
   // ระยะทางคร่าว ๆ (ตำแหน่งร้านเป็นระดับเขต จึงบอกเป็นกิโลเมตรเต็ม)
   function formatApproxKm(km) { return 'ราว ' + Math.max(1, Math.round(km)) + ' กม.'; }
 
@@ -116,6 +122,7 @@
     mapsPinUrl: mapsPinUrl,
     placePoint: placePoint,
     nearestPlaces: nearestPlaces,
+    localPlaces: localPlaces,
     formatApproxKm: formatApproxKm,
     shareLocationText: shareLocationText
   };

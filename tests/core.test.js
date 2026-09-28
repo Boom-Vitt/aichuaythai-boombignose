@@ -102,6 +102,15 @@ test('ใกล้คุณ: เรียงร้านในเขตเดี
   assert.equal(C.nearestPlaces(places, chiangMai, D.districts, 'shop', 5).length, 0);
   assert.equal(C.formatApproxKm(0.3), 'ราว 1 กม.');
   assert.equal(C.formatApproxKm(12.6), 'ราว 13 กม.');
+  // หมวดใกล้คุณ: ในรัศมี 15 กม. ก่อน ถ้าไม่มีเลยค่อยเอา 2 เจ้าที่ใกล้สุดในรัศมี 30 กม.
+  assert.deepEqual(C.localPlaces(places, bangna, D.districts, 'shop').map((x) => x.p.name), ['ข', 'จ', 'ค', 'ก']);
+  const nongChok = { lat: 13.8556, lng: 100.8624, src: 'district', district: 'หนองจอก' };
+  const far = [
+    { kind: 'tow', name: 'ไกล 1', district: 'คันนายาว' }, { kind: 'tow', name: 'ไกล 2', district: 'บึงกุ่ม' },
+    { kind: 'tow', name: 'ไกล 3', district: 'ลาดพร้าว' }, { kind: 'tow', name: 'ไกลมาก', district: 'บางแค' }
+  ];
+  assert.deepEqual(C.localPlaces(far, nongChok, D.districts, 'tow').map((x) => x.p.name), ['ไกล 1', 'ไกล 2']);
+  assert.equal(C.localPlaces(far, chiangMai, D.districts, 'tow').length, 0);
 });
 
 test('ข้อมูลเขต: ครบ 50 เขต ไม่ซ้ำ และอยู่ในกรุงเทพฯ', () => {
@@ -122,5 +131,32 @@ test('ข้อมูลร้านใกล้คุณ: ประเภท/�
     assert.match(p.src, /^https?:\/\/[^\s]+$/, 'ไม่มีแหล่งที่มา: ' + where);
     assert.ok(!seen.has(C.digits(p.num)), 'เบอร์ซ้ำ: ' + where);
     seen.add(C.digits(p.num));
+  }
+});
+
+test('ข้อมูลหมวดที่ขึ้นกับพื้นที่: ตั้งค่าครบ และชนิดตรงกับ places', () => {
+  const near = D.sections.filter((s) => s.near);
+  assert.deepEqual(near.map((s) => s.id), ['tow', 'service']);
+  for (const s of near) {
+    assert.ok(D.places.some((p) => p.kind === s.near), 'ไม่มีข้อมูลร้านชนิด ' + s.near);
+    assert.ok(s.nearTitle && s.wideTag && s.nearNote, 'ตั้งค่าหมวดไม่ครบ: ' + s.id);
+  }
+});
+
+test('ใกล้คุณทุกเขต: มีรถสไลด์และร้านขึ้นให้โทร และแต่ละมุมเมืองได้เจ้าที่ต่างกัน', () => {
+  const at = (district) => { const p = C.districtPoint(district, D.districts); return { lat: p.lat, lng: p.lng, district }; };
+  for (const [district] of D.districts) {
+    assert.ok(C.localPlaces(D.places, at(district), D.districts, 'tow').length >= 1, 'ไม่มีรถสไลด์ใกล้เขต' + district);
+    assert.ok(C.localPlaces(D.places, at(district), D.districts, 'shop').length >= 1, 'ไม่มีร้านใกล้เขต' + district);
+  }
+  const corners = ['ดอนเมือง', 'หนองจอก', 'บางนา', 'บางแค'].map(at);
+  for (const kind of ['tow', 'shop']) {
+    const tops = new Set(corners.map((loc) => C.localPlaces(D.places, loc, D.districts, kind)[0].p.num));
+    assert.ok(tops.size >= 3, `${kind}: 4 มุมเมืองได้เจ้าแรกซ้ำกันเกินไป (${[...tops]})`);
+  }
+  // ทั้ง 50 เขต: เจ้าแรกของแต่ละเขตต้องหลากหลาย ไม่ใช่เจ้าเดิมทั้งเมือง
+  for (const [kind, min] of [['tow', 5], ['shop', 10]]) {
+    const firsts = new Set(D.districts.map(([d]) => C.localPlaces(D.places, at(d), D.districts, kind)[0].p.num));
+    assert.ok(firsts.size >= min, `${kind}: ทั้งเมืองมีเจ้าแรกแค่ ${firsts.size} เจ้า`);
   }
 });

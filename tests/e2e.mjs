@@ -18,6 +18,7 @@ const TYPES = {
   '.md': 'text/plain; charset=utf-8', '.txt': 'text/plain; charset=utf-8'
 };
 const D = createRequire(import.meta.url)('../assets/js/data.js');
+const C = createRequire(import.meta.url)('../assets/js/core.js');
 const ITEMS = D.sections.flatMap((s) => s.items);
 const BANGNA = { latitude: 13.6702, longitude: 100.6068, accuracy: 18 };
 const CHIANG_MAI = { latitude: 18.7883, longitude: 98.9853, accuracy: 25 };
@@ -58,10 +59,15 @@ async function newPage(opts = {}) {
     permissions: opts.grantGps ? ['geolocation'] : []
   });
   // เทสต์ไม่ต้องโทรออกจริง: กันลิงก์ tel: ไว้ แต่ยังให้แอนิเมชันของแอปทำงาน และเก็บข้อความที่กดแชร์ไว้ตรวจ
-  await ctx.addInitScript(() => {
+  // geoDelay: หน่วง GPS ให้เหมือนมือถือจริงที่ใช้เวลาหาตำแหน่งสักพัก
+  await ctx.addInitScript((geoDelay) => {
     window.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('a[href^="tel:"]')) e.preventDefault(); }, true);
     navigator.share = (data) => { window.__shared = data; return Promise.resolve(); };
-  });
+    if (geoDelay && navigator.geolocation) {
+      const real = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+      navigator.geolocation.getCurrentPosition = (ok, err, o) => setTimeout(() => real(ok, err, o), geoDelay);
+    }
+  }, opts.geoDelay || 0);
   const page = await ctx.newPage();
   const problems = [];
   page.on('console', (m) => { if (m.type() === 'error') problems.push('console: ' + m.text()); });
@@ -75,6 +81,13 @@ async function newPage(opts = {}) {
 }
 const noOverflow = (page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 const visibleRows = (page) => page.$$eval('#list .item', (els) => els.filter((e) => !e.hidden && !e.closest('.sec').hidden).length);
+// แถวของเจ้าที่อยู่ใกล้ในหมวดนั้น (ไม่นับเบอร์ที่ใช้ได้ทุกเขตซึ่งติดป้ายสีเทา)
+const localRows = (page, id) => page.$$eval(`#sec-${id} .item`, (lis) =>
+  lis.filter((li) => !li.querySelector('.tag.any')).map((li) => li.querySelector('a').getAttribute('href')));
+// เจ้าที่ควรขึ้นจริง คำนวณจากข้อมูลชุดเดียวกับเว็บ
+const expectedLocal = (loc, kind) => C.localPlaces(D.places, loc, D.districts, kind).map((x) => 'tel:' + C.digits(x.p.num));
+const districtLoc = (district) => ({ ...C.districtPoint(district, D.districts), district });
+const NEAR = [['tow', 'tow'], ['service', 'shop']];
 
 console.log('\nเพื่อนยามรถเสีย — e2e @ ' + SITE + '\n');
 
@@ -119,6 +132,8 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
     assert(hrefs.every((h) => /^tel:\d{3,10}$/.test(h)), 'ลิงก์ผิด: ' + hrefs.find((h) => !/^tel:\d{3,10}$/.test(h)));
     assert((await page.getAttribute('#list .sec:first-child a.num', 'href')) === 'tel:1669', 'เบอร์แรกต้องเป็น 1669');
     assert((await page.textContent('#checked')).includes('25'), 'ไม่แสดงวันที่ตรวจสอบ');
+    assert(await page.locator('#sec-tow .sec-hint').count() === 1, 'หมวดรถสไลด์ต้องชวนบอกตำแหน่ง');
+    assert(await page.locator('[data-near], .tag.any').count() === 0, 'ยังไม่รู้ตำแหน่งต้องไม่มีรายการใกล้คุณ');
   });
   await check('ฉากรถสไลด์เล่นจนจบ: รถที่เสียขึ้นไปอยู่บนกระบะ และมีเครื่องหมายถูก', async () => {
     await page.waitForTimeout(6800);
@@ -201,20 +216,27 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
     await page.waitForFunction(() => document.querySelector('#where-title').textContent === 'แถวเขตบางนา');
     assert((await page.textContent('#where-sub')).includes('13.67020, 100.60680'), 'ไม่แสดงพิกัด');
     assert(await page.isHidden('#where-pick') && await page.isVisible('#share-loc'), 'สถานะการ์ดผิด');
-    assert(await page.isVisible('#nearby'), 'ต้องแสดงรายการใกล้คุณทันที');
+    assert((await page.getAttribute('#list .sec:first-child', 'id')) === 'sec-tow', 'รู้ตำแหน่งแล้วหมวดรถสไลด์ต้องขึ้นก่อน');
   });
-  await check('หลังรู้ตำแหน่ง: รายการ "ใกล้คุณ" มีรถสไลด์และร้าน แตะโทรได้ในหน้าเว็บเลย ไม่ผ่าน Google Maps', async () => {
-    assert(await page.isVisible('#nearby'), 'ไม่แสดงรายการใกล้คุณ');
-    assert((await page.textContent('#nearby-sub')).includes('แถวเขตบางนา'), 'ไม่บอกพื้นที่');
-    const tow = await page.$$eval('#near-tow a.num', (as) => as.map((a) => a.getAttribute('href')));
-    const wide = D.sections.find((sec) => sec.id === 'tow').items.length;
-    assert(tow.length >= wide && tow.every((h) => /^tel:\d+$/.test(h)), 'รถสไลด์ใกล้คุณผิด: ' + tow);
-    assert(await page.locator('#near-tow .tag', { hasText: 'มาหาคุณได้' }).count() === wide, 'ไม่มีป้ายมาหาคุณได้');
-    const shops = await page.$$eval('#near-shop a.num', (as) => as.map((a) => a.getAttribute('href')));
-    const expected = D.places.filter((pl) => pl.kind === 'shop').length ? 1 : 0;
-    assert(shops.length >= expected && shops.every((h) => /^tel:\d+$/.test(h)), 'ร้านใกล้คุณผิด: ' + shops);
+  await check('หลังรู้ตำแหน่ง: หมวดรถสไลด์และอู่ขึ้นก่อน เรียงเจ้าที่ใกล้สุด แตะโทรได้ในหน้าเว็บ ไม่ผ่าน Google Maps', async () => {
+    const order = await page.$$eval('#list .sec', (els) => els.map((e) => e.id));
+    assert(order[0] === 'sec-tow' && order[1] === 'sec-service', 'ลำดับหมวดผิด: ' + order);
+    assert((await page.getAttribute('.chip', 'href')) === '#sec-tow', 'ปุ่มหมวดไม่เรียงตาม');
+    assert((await page.textContent('#h-tow')).includes('ใกล้คุณ'), 'ชื่อหมวดไม่บอกว่าใกล้คุณ');
+    assert((await page.textContent('#sec-tow .sec-head p')).includes('แถวเขตบางนา'), 'ไม่บอกพื้นที่');
+    const here = { lat: BANGNA.latitude, lng: BANGNA.longitude, district: 'บางนา' };
+    for (const [id, kind] of NEAR) {
+      const local = await localRows(page, id), expected = expectedLocal(here, kind);
+      assert(expected.length && JSON.stringify(local) === JSON.stringify(expected), `${id}: ${local} ≠ ${expected}`);
+      const wide = D.sections.find((sec) => sec.id === id).items.length;
+      assert(await page.locator(`#sec-${id} .item .tag.any`).count() === wide, id + ': เบอร์ที่ใช้ได้ทุกเขตต้องยังอยู่ท้ายหมวด');
+    }
+    assert(await page.locator('#sec-emergency .sec-head .tag.any').count() === 1, 'หมวดเบอร์กลางต้องบอกว่าใช้ได้ทุกพื้นที่');
     assert(await page.locator('a[href*="google.com/maps"]').count() === 0, 'ยังมีลิงก์ไป Google Maps');
-    await page.locator('#near-tow a.num').first().click();
+    await page.fill('#q', D.places.find((pl) => 'tel:' + C.digits(pl.num) === expectedLocal(here, 'shop')[0]).name);
+    assert(await page.locator('#sec-service .item:not([hidden])').count() >= 1, 'ค้นหาไม่เจอร้านใกล้คุณ');
+    await page.fill('#q', '');
+    await page.locator('#sec-tow a.num').first().click();
   });
   await check('แชร์ตำแหน่ง: ส่งลิงก์ปักหมุด Google Maps พร้อมชื่อเขต', async () => {
     await page.click('#share-loc');
@@ -225,9 +247,11 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
   await check('รีโหลดแล้วยังจำตำแหน่งในแท็บเดิม / กด "เปลี่ยน" แล้วกลับไปเลือกใหม่ได้', async () => {
     await page.reload();
     assert((await page.textContent('#where-title')) === 'แถวเขตบางนา', 'ลืมตำแหน่งหลังรีโหลด');
+    assert((await page.getAttribute('#list .sec:first-child', 'id')) === 'sec-tow', 'รีโหลดแล้วรายการไม่เรียงตามตำแหน่ง');
     await page.click('#where-change');
     assert((await page.textContent('#where-title')) === 'รถเสียอยู่ตรงไหน?');
-    assert(await page.isHidden('#nearby'), 'ยกเลิกตำแหน่งแล้วต้องซ่อนรายการใกล้คุณ');
+    assert((await page.getAttribute('#list .sec:first-child', 'id')) === 'sec-emergency', 'ยกเลิกตำแหน่งแล้วต้องกลับไปเรียงแบบเดิม');
+    assert(await page.locator('[data-near]').count() === 0, 'ยกเลิกตำแหน่งแล้วต้องไม่มีรายการใกล้คุณ');
     assert(await page.isVisible('[data-gps]') && await page.isVisible('#district'), 'ไม่แสดงตัวเลือก');
   });
   await check('ปุ่ม "ฉุกเฉิน" บนแถบบนพาไปเบอร์ฉุกเฉินได้ทันที ไม่ต้องบอกตำแหน่งก่อน', async () => {
@@ -235,6 +259,23 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
     await page.waitForTimeout(900);
     const top = await page.evaluate(() => document.getElementById('sec-emergency').getBoundingClientRect().top);
     assert(top >= 0 && top < 320, 'ไม่เลื่อนไปเบอร์ฉุกเฉิน: ' + top);
+    assert(!problems.length, problems.join('\n'));
+  });
+  await ctx.close();
+}
+{
+  const { ctx, page, problems } = await newPage({ grantGps: true, geoDelay: 2500 });
+  await check('GPS หาเจอตอนผู้ใช้เลื่อนดูรายการอยู่: หมวดที่กำลังดูไม่ขยับใต้นิ้ว (กันแตะผิดเบอร์)', async () => {
+    await page.goto(SITE);
+    await page.evaluate(() => document.getElementById('sec-insurance').scrollIntoView({ block: 'start', behavior: 'instant' }));
+    await page.waitForTimeout(300);
+    const top = () => page.evaluate(() => document.getElementById('sec-insurance').getBoundingClientRect().top);
+    const before = await top();
+    assert((await page.textContent('#where-title')) === 'รถเสียอยู่ตรงไหน?', 'GPS ต้องยังหาไม่เสร็จตอนเริ่มเทสต์');
+    await page.waitForFunction(() => document.querySelector('#where-title').textContent === 'แถวเขตบางนา', null, { timeout: 8000 });
+    const after = await top();
+    assert(Math.abs(after - before) < 2, `หมวดที่กำลังดูขยับ ${before} → ${after}`);
+    assert((await page.getAttribute('#list .sec:first-child', 'id')) === 'sec-tow', 'ต้องจัดหมวดตามตำแหน่งแล้ว');
     assert(!problems.length, problems.join('\n'));
   });
   await ctx.close();
@@ -249,9 +290,22 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
     assert((await page.textContent('#toast')).includes('เลือกเขต'), 'ข้อความเตือนผิด');
     await page.selectOption('#district', 'วัฒนา');
     assert((await page.textContent('#where-title')) === 'เขตวัฒนา');
-    assert((await page.textContent('#nearby-sub')).includes('แถวเขตวัฒนา'), 'รายการใกล้คุณไม่ตามเขตที่เลือก');
-    assert(await page.locator('#near-tow a.num').count() >= 2, 'ไม่มีรถสไลด์ใกล้คุณ');
+    assert((await page.textContent('#sec-tow .sec-head p')).includes('แถวเขตวัฒนา'), 'รายการใกล้คุณไม่ตามเขตที่เลือก');
+    assert(JSON.stringify(await localRows(page, 'tow')) === JSON.stringify(expectedLocal(districtLoc('วัฒนา'), 'tow')), 'รถสไลด์ไม่ตรงกับเขตวัฒนา');
     assert(await page.isHidden('#share-loc') && await page.isVisible('#gps-again'), 'เลือกเขตเองต้องชวนใช้ GPS แทนการแชร์');
+  });
+  await check('ย้ายเขตแล้ว รถสไลด์และร้านเปลี่ยนตามตำแหน่ง (ตรงกับเจ้าที่ใกล้สุดจริงทุกเขตที่ลอง)', async () => {
+    const tops = { tow: new Set(), service: new Set() };
+    for (const district of ['บางแค', 'ดอนเมือง', 'หนองจอก', 'บางนา']) {
+      await page.click('#where-change');
+      await page.selectOption('#district', district);
+      for (const [id, kind] of NEAR) {
+        const local = await localRows(page, id), expected = expectedLocal(districtLoc(district), kind);
+        assert(local.length && JSON.stringify(local) === JSON.stringify(expected), `${district} ${id}: ${local} ≠ ${expected}`);
+        tops[id].add(local[0]);
+      }
+    }
+    assert(tops.tow.size >= 3 && tops.service.size >= 3, 'ย้ายเขตแล้วเจ้าแรกแทบไม่เปลี่ยน: ' + [...tops.tow] + ' / ' + [...tops.service]);
   });
   await check('เลือกเขตแล้วกด "ใช้ GPS" ภายหลังได้เมื่ออนุญาตแล้ว', async () => {
     await ctx.grantPermissions(['geolocation']);
@@ -267,8 +321,8 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
     await page.goto(SITE);
     await page.waitForFunction(() => document.querySelector('#where-title').textContent === 'อยู่นอกกรุงเทพฯ');
     assert(await page.isVisible('#where-note'), 'ไม่มีคำเตือน');
-    assert(await page.locator('#near-tow .tag', { hasText: 'มาหาคุณได้' }).count() >= 1, 'ต้องยังมีรถสไลด์ที่มาหาได้ทั่วประเทศ');
-    assert(await page.isVisible('#near-shop .near-empty'), 'ต้องบอกว่าไม่มีสาขาใกล้');
+    assert(await page.locator('#sec-tow .tag.any', { hasText: 'ทั่วกรุงเทพฯ' }).count() >= 1, 'ต้องยังมีรถสไลด์ที่เรียกได้ทั่วกรุงเทพฯ');
+    assert(await page.isVisible('#sec-service .near-empty'), 'ต้องบอกว่าไม่มีสาขาใกล้');
     assert(!(await page.evaluate(() => { document.querySelector('#share-loc').click(); return window.__shared.text; })).includes('แถวเขต'));
   });
   await ctx.close();
