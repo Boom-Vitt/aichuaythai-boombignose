@@ -26,7 +26,8 @@
     var num = '<b class="n">' + esc(it.num) + '</b>';
     return '<li class="item"><a class="num' + (sec.tone ? ' ' + sec.tone : '') + (long ? ' long' : '') + '" href="' + C.telHref(it.num) + '">' +
       (long ? '' : num) +
-      '<span class="t"><strong>' + esc(it.name) + '</strong>' + (long ? num : '') + '<small>' + esc(it.desc) + '</small></span>' +
+      '<span class="t"><strong>' + esc(it.name) + '</strong>' + (long ? num : '') +
+        '<small>' + (it.tag ? '<span class="tag">' + esc(it.tag) + '</span>' : '') + esc(it.desc) + '</small></span>' +
       '<i class="call" aria-hidden="true"><i class="wave"></i><i class="wave"></i>' + icon('i-phone') + '</i>' +
       '</a></li>';
   }
@@ -101,13 +102,10 @@
   });
 
   // ---------- แตะเพื่อโทร: ไอคอนโทรศัพท์สั่นเหมือนกำลังเรียกสาย ----------
-  listEl.addEventListener('click', function (e) {
+  doc.addEventListener('click', function (e) {
     var a = e.target.closest('a.num');
     if (a) FX.ring($('.call', a));
-  });
-
-  doc.addEventListener('click', function (e) {
-    if (e.target.closest('[data-action="hero"]')) FX.heroReplay();
+    else if (e.target.closest('[data-action="hero"]')) FX.heroReplay();
   });
 
   // ---------- แจ้งเตือนสั้น / คัดลอก ----------
@@ -139,7 +137,9 @@
   var whereEl = $('#where'), pickEl = $('#where-pick'), foundEl = $('#where-found');
   var titleEl = $('#where-title'), subEl = $('#where-sub'), changeBtn = $('#where-change');
   var districtSel = $('#district'), shareBtn = $('#share-loc'), gpsAgain = $('#gps-again');
-  var nearEl = $('#near'), noteEl = $('#where-note');
+  var noteEl = $('#where-note');
+  var nearbyEl = $('#nearby'), nearTow = $('#near-tow'), nearShop = $('#near-shop'), nearbySub = $('#nearby-sub');
+  var wideTow = D.sections.filter(function (s) { return s.id === 'tow'; }).map(function (s) { return s.items; })[0] || [];
   var loc = null, locating = false;
 
   districtSel.innerHTML += D.districts.map(function (d) { return d[0]; })
@@ -171,15 +171,34 @@
       : 'เลือกเอง · ใช้ GPS ถ้าต้องการส่งพิกัดที่แม่นยำ';
     shareBtn.hidden = !gps;
     gpsAgain.hidden = gps;
-    nearEl.innerHTML = D.nearby.map(function (n) {
-      return '<a href="' + esc(C.mapsNearbyUrl(n.q, loc)) + '" target="_blank" rel="noopener">' + esc(n.label) + icon('i-ext') + '</a>';
-    }).join('');
     noteEl.hidden = !gps || !!loc.district;
     noteEl.textContent = 'รายชื่อร้านและรถสไลด์ในหน้านี้เน้นกรุงเทพฯ ส่วนเบอร์ฉุกเฉิน ประกันรถ และยี่ห้อรถใช้ได้ทั่วประเทศ';
     if (animate) {
       FX.pinDrop($('.loc-ic', whereEl));
       FX.cascade($$('.where-body:not([hidden]) > :not([hidden])', whereEl), { step: 60, y: 8, duration: 320 });
     }
+  }
+
+  // ---------- ใกล้คุณ: รถสไลด์และร้านที่ใกล้ที่สุด แตะโทรได้ในหน้านี้เลย ----------
+  function nearItem(x) {
+    var p = x.p;
+    return row({
+      num: p.num, name: p.name, tag: x.same ? 'เขตเดียวกับคุณ' : '',
+      desc: [x.same ? 'เขต' + p.district : 'เขต' + p.district + ' ' + C.formatApproxKm(x.km), p.area, p.hours].filter(Boolean).join(' · ')
+    }, {});
+  }
+
+  function renderNearby(animate) {
+    nearbyEl.hidden = !loc;
+    if (!loc) return;
+    nearTow.innerHTML = wideTow.map(function (it) {
+      return row({ num: it.num, name: it.name, desc: it.desc, tag: 'มาหาคุณได้' }, {});
+    }).concat(C.nearestPlaces(D.places, loc, D.districts, 'tow', 4).map(nearItem)).join('');
+    var shops = C.nearestPlaces(D.places, loc, D.districts, 'shop', 6);
+    nearShop.innerHTML = shops.length ? shops.map(nearItem).join('')
+      : '<li class="near-empty">ยังไม่มีสาขาในรายการที่อยู่ใกล้คุณ ลองโทรเบอร์กลางของร้านเครือข่ายด้านล่าง</li>';
+    nearbySub.textContent = (loc.district ? 'แถวเขต' + loc.district : 'รอบตัวคุณ') + ' · แตะเพื่อโทรได้ทันที';
+    if (animate) FX.cascade($$('.item, .near-empty', nearbyEl), { start: 250, step: 60, y: 12 });
   }
 
   function locate(btn, silent) {
@@ -206,6 +225,8 @@
       done();
       saveLoc();
       showWhere(true);
+      renderNearby(true);
+      if (btn) whereEl.scrollIntoView({ behavior: FX.enabled() ? 'smooth' : 'auto', block: 'start' });
     }, function (err) {
       done();
       if (silent) return;
@@ -224,12 +245,14 @@
     loc = { lat: p.lat, lng: p.lng, src: 'district', district: districtSel.value, ts: Date.now() };
     saveLoc();
     showWhere(true);
+    renderNearby(true);
   });
   changeBtn.addEventListener('click', function () {
     loc = null;
     saveLoc();
     districtSel.value = '';
     showWhere();
+    renderNearby();
     FX.cascade(pickEl.children, { step: 60, y: 8, duration: 280 });
   });
   shareBtn.addEventListener('click', function () {
@@ -246,6 +269,7 @@
   // ---------- เริ่มต้น ----------
   loc = loadLoc();
   showWhere(false);
+  renderNearby(false);
   // เคยอนุญาต GPS ไว้แล้ว: หาตำแหน่งให้เลยโดยไม่ต้องกด
   if (!loc && navigator.permissions && navigator.permissions.query) {
     navigator.permissions.query({ name: 'geolocation' }).then(function (s) {

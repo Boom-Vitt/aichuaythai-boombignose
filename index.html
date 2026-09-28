@@ -45,7 +45,6 @@
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.7-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></symbol>
   <symbol id="i-gps" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></symbol>
   <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 14.5V3.5M7.5 8 12 3.5 16.5 8"/><path d="M5 12v6.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V12"/></symbol>
-  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M13.5 4.5h6v6M19.5 4.5l-8 8"/><path d="M17.5 13.5v5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1h5"/></symbol>
   <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 3.8a4.8 4.8 0 0 0-4.4 6.5l-6 6a1.9 1.9 0 0 0 2.7 2.7l6-6a4.8 4.8 0 0 0 6.5-4.4l-2.8 2.8-2.8-.7-.7-2.8z"/></symbol>
 </svg>
 
@@ -125,7 +124,7 @@
       <span class="loc-ic"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><i class="ring"></i><i class="ring"></i></span>
       <div class="where-text" aria-live="polite">
         <h2 id="where-title">รถเสียอยู่ตรงไหน?</h2>
-        <p id="where-sub">ใช้ GPS บอกพื้นที่ แล้วส่งตำแหน่งให้คนที่มาช่วยได้ทันที</p>
+        <p id="where-sub">ใช้ GPS หาร้านและรถสไลด์ใกล้คุณ แล้วแตะโทรได้เลย</p>
       </div>
       <button id="where-change" class="btn sm" type="button" hidden>เปลี่ยน</button>
     </div>
@@ -138,10 +137,20 @@
     <div id="where-found" class="where-body" hidden>
       <button id="share-loc" class="btn primary block" type="button"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg>แชร์ตำแหน่งให้คนมาช่วย</button>
       <button id="gps-again" class="btn block" type="button" data-gps><svg class="ic" aria-hidden="true"><use href="#i-gps"/></svg><span>ใช้ GPS เพื่อส่งพิกัดที่แม่นยำ</span></button>
-      <p class="near-title">ค้นหาใกล้คุณใน Google Maps</p>
-      <div id="near" class="near"></div>
       <p id="where-note" class="where-note" hidden></p>
     </div>
+  </section>
+
+  <section id="nearby" class="nearby" hidden aria-labelledby="nearby-title">
+    <div class="sec-head">
+      <span class="sec-ic"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span>
+      <div><h2 id="nearby-title">ใกล้คุณ</h2><p id="nearby-sub">แตะเพื่อโทรได้ทันที</p></div>
+    </div>
+    <h3 class="sub-h"><svg class="ic" aria-hidden="true"><use href="#i-truck"/></svg>รถสไลด์ / รถยก</h3>
+    <ul id="near-tow" class="nums"></ul>
+    <h3 class="sub-h"><svg class="ic" aria-hidden="true"><use href="#i-wrench"/></svg>อู่ / ร้านยาง / แบตเตอรี่</h3>
+    <ul id="near-shop" class="nums"></ul>
+    <p class="sec-note"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span>ระยะทางคิดจากเขตที่ร้านตั้งอยู่ โทรถามก่อนว่าไปถึงคุณได้ไหม และราคาเท่าไร · เบอร์สาขาโทรไม่ติด ลองเบอร์กลางของร้านในหมวด "อู่ / ร้านบริการรถเครือข่าย" ด้านล่าง</span></p>
   </section>
 
   <div class="finder">

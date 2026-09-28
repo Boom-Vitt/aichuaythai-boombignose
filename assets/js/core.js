@@ -79,13 +79,23 @@
     return 'https://www.google.com/maps/search/?api=1&query=' + p.lat.toFixed(5) + '%2C' + p.lng.toFixed(5);
   }
 
-  // ค้นหาใน Google Maps รอบตัว: มีพิกัด GPS ใช้พิกัด, เลือกเขตเองใช้ชื่อเขต
-  function mapsNearbyUrl(term, loc) {
-    if (loc.src === 'gps') {
-      return 'https://www.google.com/maps/search/' + encodeURIComponent(term) + '/@' + loc.lat.toFixed(5) + ',' + loc.lng.toFixed(5) + ',15z';
-    }
-    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(term + ' เขต' + loc.district + ' กรุงเทพมหานคร');
+  // จุดของร้าน: ใช้ lat/lng ถ้ามี ไม่งั้นใช้จุดกึ่งกลางของเขตที่ร้านตั้งอยู่
+  function placePoint(p, districts) {
+    return typeof p.lat === 'number' ? { lat: p.lat, lng: p.lng } : districtPoint(p.district, districts);
   }
+
+  // ร้านประเภทเดียวกันที่ใกล้ที่สุด (ร้านในเขตเดียวกับผู้ใช้มาก่อน) ไม่เกิน maxKm กม.
+  function nearestPlaces(places, loc, districts, kind, limit, maxKm) {
+    return places.filter(function (p) { return p.kind === kind; }).map(function (p) {
+      var pt = placePoint(p, districts);
+      return { p: p, km: pt ? distanceKm(loc, pt) : Infinity, same: !!loc.district && p.district === loc.district };
+    }).filter(function (x) { return x.km <= (maxKm || 25); })
+      .sort(function (a, b) { return (b.same - a.same) || (a.km - b.km); })
+      .slice(0, limit || 5);
+  }
+
+  // ระยะทางคร่าว ๆ (ตำแหน่งร้านเป็นระดับเขต จึงบอกเป็นกิโลเมตรเต็ม)
+  function formatApproxKm(km) { return 'ราว ' + Math.max(1, Math.round(km)) + ' กม.'; }
 
   function shareLocationText(loc) {
     return 'รถเสียอยู่ตรงนี้' + (loc.district ? ' (แถวเขต' + loc.district + ')' : '') + '\n' + mapsPinUrl(loc);
@@ -104,7 +114,9 @@
     districtPoint: districtPoint,
     formatCoord: formatCoord,
     mapsPinUrl: mapsPinUrl,
-    mapsNearbyUrl: mapsNearbyUrl,
+    placePoint: placePoint,
+    nearestPlaces: nearestPlaces,
+    formatApproxKm: formatApproxKm,
     shareLocationText: shareLocationText
   };
 });

@@ -201,12 +201,20 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
     await page.waitForFunction(() => document.querySelector('#where-title').textContent === 'แถวเขตบางนา');
     assert((await page.textContent('#where-sub')).includes('13.67020, 100.60680'), 'ไม่แสดงพิกัด');
     assert(await page.isHidden('#where-pick') && await page.isVisible('#share-loc'), 'สถานะการ์ดผิด');
+    assert(await page.isVisible('#nearby'), 'ต้องแสดงรายการใกล้คุณทันที');
   });
-  await check('หลังรู้ตำแหน่ง: ปุ่มค้นหาใกล้ตัวใน Google Maps ใช้พิกัด GPS และเปิดแท็บใหม่', async () => {
-    const links = await page.$$eval('#near a', (as) => as.map((a) => ({ href: a.href, target: a.target, text: a.textContent })));
-    assert(links.length === D.nearby.length, 'จำนวนปุ่มผิด');
-    assert(links.every((l) => l.href.includes('/@13.67020,100.60680,15z') && l.target === '_blank'), JSON.stringify(links[0]));
-    assert(links[0].href.includes(encodeURIComponent(D.nearby[0].q)), 'คำค้นผิด');
+  await check('หลังรู้ตำแหน่ง: รายการ "ใกล้คุณ" มีรถสไลด์และร้าน แตะโทรได้ในหน้าเว็บเลย ไม่ผ่าน Google Maps', async () => {
+    assert(await page.isVisible('#nearby'), 'ไม่แสดงรายการใกล้คุณ');
+    assert((await page.textContent('#nearby-sub')).includes('แถวเขตบางนา'), 'ไม่บอกพื้นที่');
+    const tow = await page.$$eval('#near-tow a.num', (as) => as.map((a) => a.getAttribute('href')));
+    const wide = D.sections.find((sec) => sec.id === 'tow').items.length;
+    assert(tow.length >= wide && tow.every((h) => /^tel:\d+$/.test(h)), 'รถสไลด์ใกล้คุณผิด: ' + tow);
+    assert(await page.locator('#near-tow .tag', { hasText: 'มาหาคุณได้' }).count() === wide, 'ไม่มีป้ายมาหาคุณได้');
+    const shops = await page.$$eval('#near-shop a.num', (as) => as.map((a) => a.getAttribute('href')));
+    const expected = D.places.filter((pl) => pl.kind === 'shop').length ? 1 : 0;
+    assert(shops.length >= expected && shops.every((h) => /^tel:\d+$/.test(h)), 'ร้านใกล้คุณผิด: ' + shops);
+    assert(await page.locator('a[href*="google.com/maps"]').count() === 0, 'ยังมีลิงก์ไป Google Maps');
+    await page.locator('#near-tow a.num').first().click();
   });
   await check('แชร์ตำแหน่ง: ส่งลิงก์ปักหมุด Google Maps พร้อมชื่อเขต', async () => {
     await page.click('#share-loc');
@@ -219,6 +227,7 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
     assert((await page.textContent('#where-title')) === 'แถวเขตบางนา', 'ลืมตำแหน่งหลังรีโหลด');
     await page.click('#where-change');
     assert((await page.textContent('#where-title')) === 'รถเสียอยู่ตรงไหน?');
+    assert(await page.isHidden('#nearby'), 'ยกเลิกตำแหน่งแล้วต้องซ่อนรายการใกล้คุณ');
     assert(await page.isVisible('[data-gps]') && await page.isVisible('#district'), 'ไม่แสดงตัวเลือก');
   });
   await check('ปุ่ม "ฉุกเฉิน" บนแถบบนพาไปเบอร์ฉุกเฉินได้ทันที ไม่ต้องบอกตำแหน่งก่อน', async () => {
@@ -240,8 +249,8 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
     assert((await page.textContent('#toast')).includes('เลือกเขต'), 'ข้อความเตือนผิด');
     await page.selectOption('#district', 'วัฒนา');
     assert((await page.textContent('#where-title')) === 'เขตวัฒนา');
-    const href = await page.getAttribute('#near a', 'href');
-    assert(href.includes(encodeURIComponent('เขตวัฒนา')), href);
+    assert((await page.textContent('#nearby-sub')).includes('แถวเขตวัฒนา'), 'รายการใกล้คุณไม่ตามเขตที่เลือก');
+    assert(await page.locator('#near-tow a.num').count() >= 2, 'ไม่มีรถสไลด์ใกล้คุณ');
     assert(await page.isHidden('#share-loc') && await page.isVisible('#gps-again'), 'เลือกเขตเองต้องชวนใช้ GPS แทนการแชร์');
   });
   await check('เลือกเขตแล้วกด "ใช้ GPS" ภายหลังได้เมื่ออนุญาตแล้ว', async () => {
@@ -258,6 +267,8 @@ await check('เว็บเบา: HTML+CSS+JS+ฟอนต์ รวมกั�
     await page.goto(SITE);
     await page.waitForFunction(() => document.querySelector('#where-title').textContent === 'อยู่นอกกรุงเทพฯ');
     assert(await page.isVisible('#where-note'), 'ไม่มีคำเตือน');
+    assert(await page.locator('#near-tow .tag', { hasText: 'มาหาคุณได้' }).count() >= 1, 'ต้องยังมีรถสไลด์ที่มาหาได้ทั่วประเทศ');
+    assert(await page.isVisible('#near-shop .near-empty'), 'ต้องบอกว่าไม่มีสาขาใกล้');
     assert(!(await page.evaluate(() => { document.querySelector('#share-loc').click(); return window.__shared.text; })).includes('แถวเขต'));
   });
   await ctx.close();
