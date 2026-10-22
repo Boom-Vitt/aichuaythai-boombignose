@@ -1,3 +1,15 @@
+<!-- BBN:HEADER:START -->
+<div align="center">
+
+<img src=".github/brand/banner.svg" width="100%" alt="เพื่อนยามรถเสีย กทม. — Bangkok car-breakdown phone book: locate, tap, call" />
+
+<a href="https://github.com/Boom-Vitt/aichuaythai-boombignose/stargazers"><img src="https://img.shields.io/github/stars/Boom-Vitt/aichuaythai-boombignose?style=flat-square&color=14b8a6&labelColor=0b1220" alt="stars" /></a>
+<a href="https://github.com/Boom-Vitt/aichuaythai-boombignose/commits/claude/upbeat-clarke-wlau0z"><img src="https://img.shields.io/github/last-commit/Boom-Vitt/aichuaythai-boombignose?style=flat-square&color=14b8a6&labelColor=0b1220" alt="last commit" /></a>
+<a href="https://github.com/Boom-Vitt"><img src="https://img.shields.io/badge/by-BoomBigNose-14b8a6?style=flat-square&labelColor=0b1220" alt="by BoomBigNose" /></a>
+
+</div>
+<!-- BBN:HEADER:END -->
+
 # เพื่อนยามรถเสีย กทม. 📞
 
 สมุดเบอร์โทรสำหรับคนที่รถเสียใน **กรุงเทพฯ** — ขั้นแรกบอกตำแหน่งด้วย GPS แล้วแตะแถวไหนก็โทรออกได้ทันที ไม่ต้องกรอกอะไร ไม่มีจองคิว
@@ -196,3 +208,15 @@ npx esbuild slim-entry.js --bundle --minify --format=iife --global-name=anime --
 
 - [anime.js](https://animejs.com/) โดย Julian Garnier — MIT License (`assets/vendor/anime.LICENSE.md`)
 - ฟอนต์ [Prompt](https://fonts.google.com/specimen/Prompt) โดย Cadson Demak — SIL Open Font License (`assets/fonts/OFL.txt`)
+
+<!-- BBN:FOOTER:START -->
+---
+
+<div align="center">
+
+**สร้างโดย [BoomBigNose](https://github.com/Boom-Vitt)** · [Kruoop.com](https://kruoop.com) แหล่งเรียน AI + คอมมูนิตี้ · [Seeneo.ai](https://seeneo.ai) · [YouTube 220K](https://www.youtube.com/@BoomBigNose)
+
+<sub>ถ้าโปรเจกต์นี้มีประโยชน์ กด ⭐ ให้กำลังใจกันได้เลย</sub>
+
+</div>
+<!-- BBN:FOOTER:END -->
